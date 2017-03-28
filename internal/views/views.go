@@ -1,9 +1,9 @@
 package views
 
 import (
-	"fmt"
 	"log"
 
+	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -23,14 +23,6 @@ type coords struct {
 	x2 int
 	y1 int
 	y2 int
-}
-
-type row struct {
-	//args are fed to page.next() to get data for the next page
-	args string
-
-	//data written to the screen
-	data string
 }
 
 type View interface {
@@ -87,55 +79,54 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 }
 
 //getTopics -> getTopic -> getPartition -> getMessage
-func getTopics(s int, args string) (page, error) {
-	r := make([]row, s)
-	for i := 0; i < s; i++ {
-		s := fmt.Sprintf("topic %d", i)
-		r[i] = row{args: s, data: s}
+func getTopics(size int, args string) (page, error) {
+	r, err := kafka.GetTopics(size, args)
+	if err != nil {
+		return page{}, err
 	}
+
 	return page{
 		header: "topics",
-		body:   [][]row{r},
+		body:   r,
 		next:   getTopic,
 	}, nil
 }
 
 func getTopic(s int, args string) (page, error) {
+	r, err := kafka.GetTopic(s, args)
+	if err != nil {
+		return page{}, err
+	}
+
 	return page{
 		header: args,
-		body: [][]row{
-			[]row{
-				{args: "partition 1", data: "partition 1"},
-				{args: "partition 2", data: "partition 2"},
-				{args: "partition 3", data: "partition 3"},
-			},
-		},
-		next: getPartition,
+		body:   r,
+		next:   getPartition,
 	}, nil
 }
 
 func getPartition(s int, args string) (page, error) {
+	r, err := kafka.GetPartition(s, args)
+	if err != nil {
+		return page{}, err
+	}
+
 	return page{
 		header: args,
-		body: [][]row{
-			[]row{
-				{args: `{"offset": 0}`, data: `{"name": "fred"}`},
-				{args: `{"offset": 1}`, data: `{"name": "craig"}`},
-				{args: `{"offset": 2}`, data: `{"name": "laura"}`},
-			},
-		},
-		next: getMessage,
+		body:   r,
+		next:   getMessage,
 	}, nil
 }
 
 func getMessage(s int, args string) (page, error) {
+	r, err := kafka.GetMessage(s, args)
+	if err != nil {
+		return page{}, err
+	}
+
 	return page{
 		header: args,
-		body: [][]row{
-			[]row{
-				{data: `{"name": "fred"}`},
-			},
-		},
+		body:   r,
 	}, nil
 }
 
@@ -162,7 +153,7 @@ func sel(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
 
 	p, r := pg.sel(cur)
-	n, err := p.next(0, r.args)
+	n, err := p.next(0, r.Args)
 	if err != nil {
 		return err
 	}
