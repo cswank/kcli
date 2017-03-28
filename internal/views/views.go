@@ -35,6 +35,8 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 	foot = newFooter(width, height)
 	hlp = newHelp(width, height)
 
+	ui.DefaultEditor = foot
+
 	currentView = bod.name
 
 	p, err := getTopics(bod.size, "")
@@ -177,7 +179,17 @@ func jump(g *ui.Gui, v *ui.View) error {
 	if p.name != "partition" {
 		return nil
 	}
-	return nil
+
+	var err error
+	currentView = foot.name
+	v, err = g.SetCurrentView(foot.name)
+	if err != nil {
+		return err
+	}
+
+	v.Clear()
+	v.Write([]byte("jump: "))
+	return v.SetCursor(6, 0)
 }
 
 func quit(g *ui.Gui, v *ui.View) error {
