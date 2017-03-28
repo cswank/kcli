@@ -18,6 +18,6 @@ func newHeader(w, h int) *header {
 
 func (h *header) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
-	_, err := v.Write([]byte(pg.header()))
+	_, err := v.Write([]byte(c1(pg.header())))
 	return err
 }
