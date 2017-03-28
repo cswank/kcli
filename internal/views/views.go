@@ -30,28 +30,50 @@ type row struct {
 	data string
 }
 
-type pages []page
-
-func (p pages) header() string {
-	l := len(p)
-	return p[l-1].header
+type pages struct {
+	p []page
 }
 
-func (p pages) body(page int) []row {
-	l := len(p)
-	return p[l-1].body[page]
+func (p *pages) header() string {
+	l := len(p.p)
+	return p.p[l-1].header
 }
 
-func (p pages) sel(cur int) (page, row) {
-	l := len(p)
-	page := p[l-1]
+func (p *pages) cursor() int {
+	l := len(p.p)
+	return p.p[l-1].cursor
+}
+
+func (p *pages) body(page int) []row {
+	l := len(p.p)
+	return p.p[l-1].body[page]
+}
+
+func (p *pages) sel(cur int) (page, row) {
+	l := len(p.p)
+	page := p.p[l-1]
+	page.cursor = cur
+	p.p[l-1] = page
 	return page, page.body[page.page][cur]
+}
+
+func (p *pages) pop() {
+	l := len(p.p)
+	if l == 1 {
+		return
+	}
+	p.p = p.p[:l-1]
+}
+
+func (p *pages) add(n page) {
+	p.p = append(p.p, n)
 }
 
 type page struct {
 	page   int
 	header string
 	body   [][]row
+	cursor int
 
 	next    func(int, string) (page, error)
 	forward func(int, string) ([]row, error)
@@ -72,7 +94,9 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 		log.Fatal(err)
 	}
 
-	pg = []page{p}
+	pg = pages{
+		p: []page{p},
+	}
 
 	return func(g *ui.Gui) error {
 		v, err := g.SetView(head.name, head.coords.x1, head.coords.y1, head.coords.x2, head.coords.y2)
@@ -188,9 +212,14 @@ func sel(g *ui.Gui, v *ui.View) error {
 	if err != nil {
 		return err
 	}
-	pg = append(pg, n)
 
+	pg.add(n)
 	return v.SetCursor(0, 0)
+}
+
+func popPage(g *ui.Gui, v *ui.View) error {
+	pg.pop()
+	return v.SetCursor(0, pg.cursor())
 }
 
 func quit(g *ui.Gui, v *ui.View) error {
@@ -212,6 +241,7 @@ func Keybindings(g *ui.Gui) error {
 		{bod.name, 'n', ui.ModNone, next},
 		{bod.name, 'p', ui.ModNone, prev},
 		{bod.name, ui.KeyEnter, ui.ModNone, sel},
+		{bod.name, ui.KeyEsc, ui.ModNone, popPage},
 	}
 
 	for _, k := range keys {

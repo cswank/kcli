@@ -26,6 +26,7 @@ func main() {
 	w, h := g.Size()
 	g.SetManagerFunc(views.GetLayout(w, h))
 	g.Cursor = true
+	g.InputEsc = true
 
 	if err := views.Keybindings(g); err != nil {
 		g.Close()
