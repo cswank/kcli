@@ -13,6 +13,9 @@ var (
 	head *header
 	bod  *body
 	foot *footer
+	hlp  *help
+
+	currentView string
 )
 
 type coords struct {
@@ -38,6 +41,9 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 	head = newHeader(width, height)
 	bod = newBody(width, height)
 	foot = newFooter(width, height)
+	hlp = newHelp(width, height)
+
+	currentView = bod.name
 
 	p, err := getTopics(bod.size, "")
 	if err != nil {
@@ -63,9 +69,6 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 			return err
 		}
 
-		if _, err := g.SetCurrentView(bod.name); err != nil {
-			return err
-		}
 		v.Frame = false
 
 		if err := bod.Render(g, v); err != nil {
@@ -78,7 +81,8 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 		}
 		v.Frame = false
 
-		return nil
+		_, err = g.SetCurrentView(currentView)
+		return err
 	}
 }
 
@@ -192,6 +196,8 @@ func Keybindings(g *ui.Gui) error {
 		{bod.name, 'p', ui.ModNone, prev},
 		{bod.name, ui.KeyEnter, ui.ModNone, sel},
 		{bod.name, ui.KeyEsc, ui.ModNone, popPage},
+		{bod.name, 'h', ui.ModNone, hlp.show},
+		{hlp.name, 'h', ui.ModNone, hlp.hide},
 	}
 
 	for _, k := range keys {
