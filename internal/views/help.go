@@ -16,6 +16,7 @@ var (
   %s %s
   %s %s
   %s %s
+  %s %s
   %s %s`
 
 	helpStr = []byte(fmt.Sprintf(
@@ -32,7 +33,9 @@ var (
 		colors.White("view item at cursor"),
 		colors.Yellow("esc"),
 		colors.White("back to previous view"),
-		colors.Yellow("C"),
+		colors.Yellow("j"),
+		colors.White("jump to a kafka offset"),
+		colors.Yellow("c"),
 		colors.White("copy item at cursor to clipboard"),
 		colors.Yellow("h"),
 		colors.White("toggle help"),
@@ -59,7 +62,7 @@ func getHelpCoords(g *ui.Gui) coords {
 	x1 := maxX/2 - width/2
 	x2 := maxX/2 + width/2
 	y1 := maxY/2 - height/2
-	y2 := maxY/2 + height/2
+	y2 := maxY/2 + height/2 + height%2
 	return coords{x1: x1, y1: y1, x2: x2, y2: y2}
 }
 

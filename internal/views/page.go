@@ -3,6 +3,7 @@ package views
 import "github.com/cswank/kcli/internal/kafka"
 
 type page struct {
+	name   string
 	page   int
 	header string
 	body   [][]kafka.Row
@@ -30,6 +31,11 @@ func (p *pages) cursor() int {
 func (p *pages) body(page int) []kafka.Row {
 	l := len(p.p)
 	return p.p[l-1].body[page]
+}
+
+func (p *pages) current() page {
+	l := len(p.p)
+	return p.p[l-1]
 }
 
 func (p *pages) sel(cur int) (page, kafka.Row) {

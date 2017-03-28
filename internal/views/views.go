@@ -86,6 +86,7 @@ func getTopics(size int, args string) (page, error) {
 	}
 
 	return page{
+		name:   "topics",
 		header: "topics",
 		body:   r,
 		next:   getTopic,
@@ -99,6 +100,7 @@ func getTopic(s int, args string) (page, error) {
 	}
 
 	return page{
+		name:   "topic",
 		header: args,
 		body:   r,
 		next:   getPartition,
@@ -112,6 +114,7 @@ func getPartition(s int, args string) (page, error) {
 	}
 
 	return page{
+		name:   "partition",
 		header: args,
 		body:   r,
 		next:   getMessage,
@@ -125,6 +128,7 @@ func getMessage(s int, args string) (page, error) {
 	}
 
 	return page{
+		name:   "message",
 		header: args,
 		body:   r,
 	}, nil
@@ -151,9 +155,10 @@ func prev(g *ui.Gui, v *ui.View) error {
 //func is called to get then next page.
 func sel(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
+	_, size := v.Size()
 
 	p, r := pg.sel(cur)
-	n, err := p.next(0, r.Args)
+	n, err := p.next(size, r.Args)
 	if err != nil {
 		return err
 	}
@@ -165,6 +170,14 @@ func sel(g *ui.Gui, v *ui.View) error {
 func popPage(g *ui.Gui, v *ui.View) error {
 	pg.pop()
 	return v.SetCursor(0, pg.cursor())
+}
+
+func jump(g *ui.Gui, v *ui.View) error {
+	p := pg.current()
+	if p.name != "partition" {
+		return nil
+	}
+	return nil
 }
 
 func quit(g *ui.Gui, v *ui.View) error {
