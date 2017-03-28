@@ -58,6 +58,12 @@ func Connect(a []string) {
 	GetMessage = getMessage
 }
 
+func Close() {
+	if cli != nil {
+		cli.Close()
+	}
+}
+
 func getTopics(size int, args string) ([][]Row, error) {
 	topics, err := cli.Topics()
 	log.Println("topics", topics, err)

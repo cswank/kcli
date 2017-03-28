@@ -50,20 +50,26 @@ func main() {
 	g.Cursor = true
 	g.InputEsc = true
 
-	if err := views.Keybindings(g); err != nil {
+	defer func() {
 		g.Close()
-		log.Fatal(err)
+		if f != nil {
+			f.Close()
+		}
+		kafka.Close()
+	}()
+
+	if err := views.Keybindings(g); err != nil {
+		log.Println(err)
+		return
 	}
 
 	if err := g.MainLoop(); err != nil {
 		if err != ui.ErrQuit {
-			g.Close()
-			log.Fatal(err)
+			log.Println(err)
+			return
 		}
 	}
 
-	if f != nil {
-		f.Close()
-	}
 	g.Close()
+
 }
