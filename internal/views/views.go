@@ -179,31 +179,3 @@ func popPage(g *ui.Gui, v *ui.View) error {
 func quit(g *ui.Gui, v *ui.View) error {
 	return ui.ErrQuit
 }
-
-type key struct {
-	name string
-	key  interface{}
-	mod  ui.Modifier
-	f    func(*ui.Gui, *ui.View) error
-}
-
-func Keybindings(g *ui.Gui) error {
-
-	keys := []key{
-		{"", ui.KeyCtrlC, ui.ModNone, quit},
-		{"", 'q', ui.ModNone, quit},
-		{bod.name, 'n', ui.ModNone, next},
-		{bod.name, 'p', ui.ModNone, prev},
-		{bod.name, ui.KeyEnter, ui.ModNone, sel},
-		{bod.name, ui.KeyEsc, ui.ModNone, popPage},
-		{bod.name, 'h', ui.ModNone, hlp.show},
-		{hlp.name, 'h', ui.ModNone, hlp.hide},
-	}
-
-	for _, k := range keys {
-		if err := g.SetKeybinding(k.name, k.key, k.mod, k.f); err != nil {
-			return err
-		}
-	}
-	return nil
-}
