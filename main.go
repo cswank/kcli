@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"os"
 
+	"github.com/cswank/kcli/internal/kafka"
 	"github.com/cswank/kcli/internal/views"
 
 	ui "github.com/jroimartin/gocui"
@@ -10,12 +12,32 @@ import (
 )
 
 var (
-	g     *ui.Gui
-	addrs = kingpin.Flag("addresses", "comma seperated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
+	g      *ui.Gui
+	addrs  = kingpin.Flag("addresses", "comma seperated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
+	fake   = kingpin.Flag("fake", "don't connect to kafka, use hard coded fake data instead").Short('f').Bool()
+	logout = kingpin.Flag("logs", "for debugging, set the log output to a file").Short('l').String()
+
+	f *os.File
 )
 
-func main() {
+func init() {
 	kingpin.Parse()
+
+	if *logout != "" {
+		var err error
+		f, err = os.Create(*logout)
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.SetOutput(f)
+	}
+
+	if !*fake {
+		kafka.Connect(*addrs)
+	}
+}
+
+func main() {
 
 	var err error
 	g, err = ui.NewGui(ui.OutputNormal)
@@ -40,5 +62,8 @@ func main() {
 		}
 	}
 
+	if f != nil {
+		f.Close()
+	}
 	g.Close()
 }

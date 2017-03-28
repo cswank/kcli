@@ -3,7 +3,6 @@ package views
 import (
 	"log"
 
-	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -40,6 +39,7 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 	currentView = bod.name
 
 	p, err := getTopics(bod.size, "")
+	log.Println("topics", p, err)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,66 +74,11 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 			return err
 		}
 		v.Frame = false
+		v.Editable = true
 
 		_, err = g.SetCurrentView(currentView)
 		return err
 	}
-}
-
-//getTopics -> getTopic -> getPartition -> getMessage
-func getTopics(size int, args string) (page, error) {
-	r, err := kafka.GetTopics(size, args)
-	if err != nil {
-		return page{}, err
-	}
-
-	return page{
-		name:   "topics",
-		header: "topics",
-		body:   r,
-		next:   getTopic,
-	}, nil
-}
-
-func getTopic(s int, args string) (page, error) {
-	r, err := kafka.GetTopic(s, args)
-	if err != nil {
-		return page{}, err
-	}
-
-	return page{
-		name:   "topic",
-		header: args,
-		body:   r,
-		next:   getPartition,
-	}, nil
-}
-
-func getPartition(s int, args string) (page, error) {
-	r, err := kafka.GetPartition(s, args)
-	if err != nil {
-		return page{}, err
-	}
-
-	return page{
-		name:   "partition",
-		header: args,
-		body:   r,
-		next:   getMessage,
-	}, nil
-}
-
-func getMessage(s int, args string) (page, error) {
-	r, err := kafka.GetMessage(s, args)
-	if err != nil {
-		return page{}, err
-	}
-
-	return page{
-		name:   "message",
-		header: args,
-		body:   r,
-	}, nil
 }
 
 func next(g *ui.Gui, v *ui.View) error {

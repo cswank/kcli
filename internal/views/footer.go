@@ -38,6 +38,13 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	}
 }
 
+func (f *footer) exit(g *ui.Gui, v *ui.View) error {
+	currentView = bod.name
+	v.Clear()
+	_, err := g.SetCurrentView(bod.name)
+	return err
+}
+
 func (f *footer) acceptable(s string) bool {
 	return strings.Contains(chars, s)
 }

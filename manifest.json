@@ -1,0 +1,21 @@
+{
+    "dependencies": {
+        "github.com/Shopify/sarama": {
+            "branch": "master"
+        },
+        "github.com/fatih/color": {
+            "branch": "master"
+        },
+        "github.com/jroimartin/gocui": {
+            "branch": "master"
+        },
+        "gopkg.in/alecthomas/kingpin.v2": {
+            "version": "^2.1.0"
+        }
+    },
+    "overrides": {
+        "github.com/mattn/go-isatty": {
+            "branch": "master"
+        }
+    }
+}
