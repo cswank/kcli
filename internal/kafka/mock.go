@@ -4,39 +4,27 @@ import (
 	"fmt"
 )
 
-func getMockTopics(size int, args string) ([][]Row, error) {
-	r := make([]Row, size)
-	for i := 0; i < size; i++ {
-		s := fmt.Sprintf("topic %d", i)
-		r[i] = Row{Args: s, Data: s}
+func getMockTopics() ([]string, error) {
+	var t []string
+	for i := 0; i < 10; i++ {
+		t = append(t, fmt.Sprintf("topic %d", i))
 	}
-	return [][]Row{r}, nil
+	return t, nil
 }
 
-func getMockTopic(size int, args string) ([][]Row, error) {
-	return [][]Row{
-		[]Row{
-			{Args: "partition 1", Data: "partition 1"},
-			{Args: "partition 2", Data: "partition 2"},
-			{Args: "partition 3", Data: "partition 3"},
-		},
+func getMockTopic(topic string) ([]Partition, error) {
+	return []Partition{
+		{Partition: 1, Topic: topic, Start: 1243, End: 12001},
+		{Partition: 2, Topic: topic, Start: 0, End: 99},
+		{Partition: 3, Topic: topic, Start: 4004, End: 5005},
 	}, nil
 }
 
-func getMockPartition(size int, args string) ([][]Row, error) {
-	return [][]Row{
-		[]Row{
-			{Args: `{"offset": 0}`, Data: `{"name": "fred"}`},
-			{Args: `{"offset": 1}`, Data: `{"name": "craig"}`},
-			{Args: `{"offset": 2}`, Data: `{"name": "laura"}`},
-		},
-	}, nil
-}
-
-func getMockMessage(size int, args string) ([][]Row, error) {
-	return [][]Row{
-		[]Row{
-			{Data: `{"name": "fred"}`},
-		},
+func getMockPartition(part Partition, num int) ([]Msg, error) {
+	return []Msg{
+		{Value: []byte(`{"name": "craig"}`), Partition: Partition{Partition: part.Partition, Topic: part.Topic, Start: 1243, End: 12001}},
+		{Value: []byte(`{"name": "james"}`), Partition: Partition{Partition: part.Partition, Topic: part.Topic, Start: 0, End: 99}},
+		{Value: []byte(`{"name": "ronnie"}`), Partition: Partition{Partition: part.Partition, Topic: part.Topic, Start: 4004, End: 5005}},
+		{Value: []byte(`{"name": "jeff"}`), Partition: Partition{Partition: part.Partition, Topic: part.Topic, Start: 4, End: 11}},
 	}, nil
 }

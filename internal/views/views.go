@@ -113,7 +113,7 @@ func sel(g *ui.Gui, v *ui.View) error {
 	_, size := v.Size()
 
 	p, r := pg.sel(cur)
-	n, err := p.next(size, r.Args)
+	n, err := p.next(size, r.args)
 	if err != nil {
 		return err
 	}

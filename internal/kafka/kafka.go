@@ -2,46 +2,43 @@ package kafka
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
-	"sort"
+	"time"
 
 	"github.com/Shopify/sarama"
 )
 
 var (
-	GetTopics, GetTopic, GetPartition, GetMessage fetcher
+	GetTopics    func() ([]string, error)
+	GetTopic     func(string) ([]Partition, error)
+	GetPartition func(Partition, int) ([]Msg, error)
 
 	addrs []string
 	cli   sarama.Client
 )
 
-type Row struct {
-	Args string
-	Data string
-}
-
-type fetcher func(int, string) ([][]Row, error)
-
-type PartitionInfo struct {
+type Partition struct {
 	Topic     string `json:"topic"`
 	Partition int32  `json:"partition"`
 	Start     int64  `json:"start"`
 	End       int64  `json:"end"`
-	Offset    int64  `json:"cursor"`
-	Msg       string `json:"msg"`
+	Offset    int64  `json:"offset"`
+}
+
+func (p *Partition) String() string {
+	d, _ := json.Marshal(p)
+	return string(d)
+}
+
+type Msg struct {
+	Partition Partition `json:"partition"`
+	Value     []byte    `json:"msg"`
 }
 
 func init() {
 	GetTopics = getMockTopics
 	GetTopic = getMockTopic
 	GetPartition = getMockPartition
-	GetMessage = getMockMessage
-}
-
-func (p *PartitionInfo) String() string {
-	d, _ := json.Marshal(p)
-	return string(d)
 }
 
 func Connect(a []string) {
@@ -52,46 +49,19 @@ func Connect(a []string) {
 		log.Fatal(err)
 	}
 
-	GetTopics = getTopics
+	GetTopics = cli.Topics
 	GetTopic = getTopic
 	GetPartition = getPartition
-	GetMessage = getMessage
 }
 
-func Close() {
-	if cli != nil {
-		cli.Close()
-	}
-}
-
-func getTopics(size int, args string) ([][]Row, error) {
-	topics, err := cli.Topics()
-	log.Println("topics", topics, err)
-	if err != nil {
-		return nil, err
-	}
-
-	sort.Strings(topics)
-	out := make([]Row, len(topics))
-
-	for i, topic := range topics {
-		out[i] = Row{
-			Args: topic,
-			Data: topic,
-		}
-	}
-
-	return split(out, size), nil
-}
-
-func getTopic(size int, topic string) ([][]Row, error) {
+func getTopic(topic string) ([]Partition, error) {
 	partitions, err := cli.Partitions(topic)
 
 	if err != nil {
 		return nil, err
 	}
 
-	out := make([]Row, len(partitions))
+	out := make([]Partition, len(partitions))
 
 	for i, p := range partitions {
 		n, err := cli.GetOffset(topic, p, sarama.OffsetNewest)
@@ -103,42 +73,63 @@ func getTopic(size int, topic string) ([][]Row, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		pi := PartitionInfo{
+		out[i] = Partition{
 			Topic:     topic,
 			Partition: p,
 			Start:     o,
 			End:       n,
 			Offset:    o,
 		}
+	}
+	return out, nil
+}
 
-		d, err := json.Marshal(pi)
-		if err != nil {
-			return nil, err
-		}
-		out[i] = Row{Args: string(d), Data: fmt.Sprintf("%d", p)}
+func getPartition(part Partition, end int) ([]Msg, error) {
+	c, err := sarama.NewConsumer(addrs, nil)
+	if err != nil {
+		return nil, err
 	}
 
-	return split(out, size), nil
-}
-
-func getPartition(size int, args string) ([][]Row, error) {
-	return nil, nil
-}
-
-func getMessage(size int, args string) ([][]Row, error) {
-	return nil, nil
-}
-
-func split(rows []Row, size int) [][]Row {
-	var out [][]Row
-	for len(rows) > 0 {
-		end := size
-		if size > len(rows) {
-			end = len(rows)
-		}
-		out = append(out, rows[:end])
-		rows = rows[end:]
+	pc, err := c.ConsumePartition(part.Topic, part.Partition, part.Offset)
+	if err != nil {
+		return nil, err
 	}
-	return out
+
+	defer func() {
+		c.Close()
+		pc.Close()
+	}()
+
+	l := int(part.End - part.Offset)
+	if l < end {
+		end = l
+	}
+
+	var out []Msg
+
+	var msg *sarama.ConsumerMessage
+	for i := 0; i < end; i++ {
+		select {
+		case msg = <-pc.Messages():
+			out = append(out, Msg{
+				Value: msg.Value,
+				Partition: Partition{
+					Offset:    msg.Offset,
+					Partition: msg.Partition,
+					Topic:     msg.Topic,
+				},
+			})
+		case <-time.After(time.Second):
+			break
+		}
+	}
+
+	log.Println("consuming kafka", part.Topic, part.Partition, part.Offset, part.End, end, len(out))
+	return out, nil
+}
+
+func Close() {
+	if cli != nil {
+		cli.Close()
+	}
 }

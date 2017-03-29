@@ -1,21 +1,24 @@
 package views
 
-import "github.com/cswank/kcli/internal/kafka"
-
 type page struct {
 	name   string
 	page   int
 	header string
-	body   [][]kafka.Row
+	body   [][]row
 	cursor int
 
-	next    func(int, string) (page, error)
-	forward func(int, string) ([]kafka.Row, error)
-	back    func(int, string) ([]kafka.Row, error)
+	next    func(int, interface{}) (page, error)
+	forward func(int, interface{}) ([]row, error)
+	back    func(int, interface{}) ([]row, error)
 }
 
 type pages struct {
 	p []page
+}
+
+type row struct {
+	args  interface{}
+	value string
 }
 
 func (p *pages) header() string {
@@ -28,7 +31,7 @@ func (p *pages) cursor() int {
 	return p.p[l-1].cursor
 }
 
-func (p *pages) body(page int) []kafka.Row {
+func (p *pages) body(page int) []row {
 	l := len(p.p)
 	return p.p[l-1].body[page]
 }
@@ -38,7 +41,7 @@ func (p *pages) current() page {
 	return p.p[l-1]
 }
 
-func (p *pages) sel(cur int) (page, kafka.Row) {
+func (p *pages) sel(cur int) (page, row) {
 	l := len(p.p)
 	page := p.p[l-1]
 	page.cursor = cur

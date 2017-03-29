@@ -21,7 +21,7 @@ func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
 	body := pg.body(b.page)
 	for _, r := range body {
-		_, err := v.Write(append([]byte(c2(r.Data)), []byte("\n")...))
+		_, err := v.Write(append([]byte(c2(r.value)), []byte("\n")...))
 		if err != nil {
 			return err
 		}
