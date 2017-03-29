@@ -73,6 +73,7 @@ func main() {
 	}
 
 	closed = true
+	g.Close()
 	if views.After != nil {
 		views.After()
 	}
