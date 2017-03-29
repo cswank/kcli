@@ -119,6 +119,7 @@ func getPartition(part Partition, end int) ([]Msg, error) {
 					Offset:    msg.Offset,
 					Partition: msg.Partition,
 					Topic:     msg.Topic,
+					End:       part.End,
 				},
 			})
 		case <-time.After(time.Second):

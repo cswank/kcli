@@ -2,8 +2,11 @@ package views
 
 import (
 	"fmt"
+	"log"
+	"strconv"
 	"strings"
 
+	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -40,8 +43,32 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 
 func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 	currentView = bod.name
+	s := v.Buffer()
+	parts := strings.Split(s, ":")
+	if len(parts) != 2 {
+		return nil
+	}
+
+	n, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+	if err != nil {
+		return err
+	}
+
+	p := pg.pop()
+	row := p.body[0][0]
+	msg := row.args.(kafka.Msg)
+	part := msg.Partition
+	part.Offset = n
+	p, err = getPartition(bod.size, part)
+	if err != nil {
+		return err
+	}
+
+	log.Println(p)
+	pg.add(p)
+
 	v.Clear()
-	_, err := g.SetCurrentView(bod.name)
+	_, err = g.SetCurrentView(bod.name)
 	return err
 }
 

@@ -49,12 +49,15 @@ func (p *pages) sel(cur int) (page, row) {
 	return page, page.body[page.page][cur]
 }
 
-func (p *pages) pop() {
+func (p *pages) pop() page {
 	l := len(p.p)
 	if l == 1 {
-		return
+		return page{}
 	}
+
+	out := p.p[l-1]
 	p.p = p.p[:l-1]
+	return out
 }
 
 func (p *pages) add(n page) {
