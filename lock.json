@@ -1,5 +1,5 @@
 {
-    "memo": "bc9296afe42ac7e5ce9ee1f77314bfd6490a1eb173b1113ddb06e57b124722ad",
+    "memo": "3f8aaf0f73a57d924cbddd202e82842cd3d6eb41a5ecb5b2eb5cf4d05e1aaa70",
     "projects": [
         {
             "name": "github.com/Shopify/sarama",
@@ -100,7 +100,7 @@
         },
         {
             "name": "github.com/mattn/go-isatty",
-            "branch": "master",
+            "version": "v0.0.2",
             "revision": "fc9e8d8ef48496124e79ae0df75490096eccf6fe",
             "packages": [
                 "."

@@ -12,10 +12,5 @@
         "gopkg.in/alecthomas/kingpin.v2": {
             "version": "^2.1.0"
         }
-    },
-    "overrides": {
-        "github.com/mattn/go-isatty": {
-            "branch": "master"
-        }
     }
 }
