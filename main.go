@@ -49,8 +49,11 @@ func main() {
 	g.Cursor = true
 	g.InputEsc = true
 
+	var closed bool
 	defer func() {
-		g.Close()
+		if !closed {
+			g.Close()
+		}
 		if f != nil {
 			f.Close()
 		}
@@ -67,5 +70,10 @@ func main() {
 			log.Println(err)
 			return
 		}
+	}
+
+	closed = true
+	if views.After != nil {
+		views.After()
 	}
 }

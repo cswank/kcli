@@ -1,9 +1,11 @@
 package views
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/cswank/kcli/internal/colors"
+	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -18,6 +20,9 @@ var (
 	currentView string
 
 	c1, c2, c3 colors.Colorer
+
+	//After gets called by main when the gui is closed (if it's not nil)
+	After func()
 )
 
 func init() {
@@ -143,6 +148,19 @@ func jump(g *ui.Gui, v *ui.View) error {
 	v.Clear()
 	v.Write([]byte("jump: "))
 	return v.SetCursor(6, 0)
+}
+
+func dump(g *ui.Gui, v *ui.View) error {
+	_, cur := v.Cursor()
+	_, r := pg.sel(cur)
+	msg := r.args.(kafka.Msg)
+	part := msg.Partition
+	After = func() {
+		kafka.Fetch(part, part.End, func(s string) {
+			fmt.Println(s)
+		})
+	}
+	return ui.ErrQuit
 }
 
 func quit(g *ui.Gui, v *ui.View) error {

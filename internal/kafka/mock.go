@@ -28,3 +28,11 @@ func getMockPartition(part Partition, num int) ([]Msg, error) {
 		{Value: []byte(`{"name": "jeff"}`), Partition: Partition{Partition: part.Partition, Topic: part.Topic, Start: 4, End: 11}},
 	}, nil
 }
+
+func mockFetch(_ Partition, _ int64, cb func(string)) error {
+	for i := 0; i < 10; i++ {
+		cb(fmt.Sprintf("%d", i))
+	}
+
+	return nil
+}

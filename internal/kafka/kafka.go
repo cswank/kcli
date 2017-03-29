@@ -12,6 +12,7 @@ var (
 	GetTopics    func() ([]string, error)
 	GetTopic     func(string) ([]Partition, error)
 	GetPartition func(Partition, int) ([]Msg, error)
+	Fetch        func(Partition, int64, func(string)) error
 
 	addrs []string
 	cli   sarama.Client
@@ -40,6 +41,7 @@ func init() {
 	GetTopics = getMockTopics
 	GetTopic = getMockTopic
 	GetPartition = getMockPartition
+	Fetch = mockFetch
 }
 
 func Connect(a []string) {
@@ -53,6 +55,7 @@ func Connect(a []string) {
 	GetTopics = cli.Topics
 	GetTopic = getTopic
 	GetPartition = getPartition
+	Fetch = fetch
 }
 
 func getTopic(topic string) ([]Partition, error) {
@@ -135,4 +138,37 @@ func Close() {
 	if cli != nil {
 		cli.Close()
 	}
+}
+
+func fetch(info Partition, end int64, cb func(string)) error {
+	c, err := sarama.NewConsumer(addrs, nil)
+	if err != nil {
+		return err
+	}
+
+	pc, err := c.ConsumePartition(info.Topic, info.Partition, info.Offset)
+	if err != nil {
+		return err
+	}
+
+	defer func() {
+		c.Close()
+		pc.Close()
+	}()
+
+	l := info.End - info.Offset
+	if l < end {
+		end = l
+	}
+
+	for i := int64(0); i < end; i++ {
+		select {
+		case msg := <-pc.Messages():
+			cb(string(msg.Value))
+		case <-time.After(time.Second):
+			break
+		}
+	}
+
+	return nil
 }

@@ -21,6 +21,7 @@ func Keybindings(g *ui.Gui) error {
 		{bod.name, ui.KeyEnter, ui.ModNone, sel},
 		{bod.name, ui.KeyEsc, ui.ModNone, popPage},
 		{bod.name, 'j', ui.ModNone, jump},
+		{bod.name, 'd', ui.ModNone, dump},
 		{foot.name, ui.KeyEnter, ui.ModNone, foot.exit},
 		{bod.name, 'h', ui.ModNone, hlp.show},
 		{hlp.name, 'h', ui.ModNone, hlp.hide},
