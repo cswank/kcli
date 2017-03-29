@@ -8,16 +8,16 @@ import (
 )
 
 var (
-	tpl = `  %s %s
-  %s %s
-  %s %s
-  %s %s
-  %s %s
-  %s %s
-  %s %s
-  %s %s
-  %s %s
-  %s %s`
+	tpl = `  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s
+  %-15s %50s`
 
 	helpStr = []byte(fmt.Sprintf(
 		tpl,
@@ -57,7 +57,7 @@ func newHelp(w, h int) *help {
 
 func getHelpCoords(g *ui.Gui) coords {
 	maxX, maxY := g.Size()
-	width := 44
+	width := 50
 	height := 11
 	x1 := maxX/2 - width/2
 	x2 := maxX/2 + width/2

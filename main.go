@@ -69,7 +69,4 @@ func main() {
 			return
 		}
 	}
-
-	g.Close()
-
 }
