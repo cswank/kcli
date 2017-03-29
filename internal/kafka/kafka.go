@@ -33,6 +33,7 @@ func (p *Partition) String() string {
 type Msg struct {
 	Partition Partition `json:"partition"`
 	Value     []byte    `json:"msg"`
+	Offset    int64     `json:"offset"`
 }
 
 func init() {
@@ -112,7 +113,8 @@ func getPartition(part Partition, end int) ([]Msg, error) {
 		select {
 		case msg = <-pc.Messages():
 			out = append(out, Msg{
-				Value: msg.Value,
+				Value:  msg.Value,
+				Offset: msg.Offset,
 				Partition: Partition{
 					Offset:    msg.Offset,
 					Partition: msg.Partition,
