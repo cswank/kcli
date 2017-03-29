@@ -14,7 +14,6 @@ import (
 var (
 	g      *ui.Gui
 	addrs  = kingpin.Flag("addresses", "comma seperated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
-	fake   = kingpin.Flag("fake", "don't connect to kafka, use hard coded fake data instead").Short('f').Bool()
 	logout = kingpin.Flag("logs", "for debugging, set the log output to a file").Short('l').String()
 
 	f *os.File
@@ -32,7 +31,7 @@ func init() {
 		log.SetOutput(f)
 	}
 
-	if !*fake {
+	if os.Getenv("KCLI_FAKE") != "true" {
 		kafka.Connect(*addrs)
 	}
 }
