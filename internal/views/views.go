@@ -3,6 +3,7 @@ package views
 import (
 	"log"
 
+	"github.com/cswank/kcli/internal/colors"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -15,7 +16,14 @@ var (
 	hlp  *help
 
 	currentView string
+
+	c1, c2, c3 colors.Colorer
 )
+
+func init() {
+	c1, c2, c3 = getColors()
+	helpMsg = getHelpMsg()
+}
 
 type coords struct {
 	x1 int

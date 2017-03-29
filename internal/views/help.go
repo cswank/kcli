@@ -2,15 +2,11 @@ package views
 
 import (
 	"fmt"
-	"os"
 
-	"github.com/cswank/kcli/internal/colors"
 	ui "github.com/jroimartin/gocui"
 )
 
 var (
-	c1, c2, c3 colors.Colorer
-
 	helpMsg []byte
 
 	tpl = `  %-15s %50s
@@ -24,45 +20,6 @@ var (
   %-15s %50s
   %-15s %50s`
 )
-
-func init() {
-	c1 = colors.Get(os.Getenv("KCLI_COLOR1"))
-	if c1 == nil {
-		c1 = colors.White
-	}
-	c2 = colors.Get(os.Getenv("KCLI_COLOR2"))
-	if c2 == nil {
-		c2 = colors.Green
-	}
-	c3 = colors.Get(os.Getenv("KCLI_COLOR3"))
-	if c3 == nil {
-		c3 = colors.Yellow
-	}
-
-	helpMsg = []byte(fmt.Sprintf(
-		tpl,
-		c3("n"),
-		c1("(or down arrow) move cursor down"),
-		c3("p"),
-		c1("(or up arrow) move cursor up"),
-		c3("f"),
-		c1("(or right arrow) forward to next page"),
-		c3("b"),
-		c1("(or left arrow) backward to prev page"),
-		c3("enter"),
-		c1("view item at cursor"),
-		c3("esc"),
-		c1("back to previous view"),
-		c3("j"),
-		c1("jump to a kafka offset"),
-		c3("c"),
-		c1("copy item at cursor to clipboard"),
-		c3("h"),
-		c1("toggle help"),
-		c3("q"),
-		c1("quit"),
-	))
-}
 
 type help struct {
 	name   string
@@ -118,4 +75,30 @@ func (h *help) hide(g *ui.Gui, v *ui.View) error {
 	currentView = bod.name
 	vw.Clear()
 	return err
+}
+
+func getHelpMsg() []byte {
+	return []byte(fmt.Sprintf(
+		tpl,
+		c3("n"),
+		c1("(or down arrow) move cursor down"),
+		c3("p"),
+		c1("(or up arrow) move cursor up"),
+		c3("f"),
+		c1("(or right arrow) forward to next page"),
+		c3("b"),
+		c1("(or left arrow) backward to prev page"),
+		c3("enter"),
+		c1("view item at cursor"),
+		c3("esc"),
+		c1("back to previous view"),
+		c3("j"),
+		c1("jump to a kafka offset"),
+		c3("c"),
+		c1("copy item at cursor to clipboard"),
+		c3("h"),
+		c1("toggle help"),
+		c3("q"),
+		c1("quit"),
+	))
 }
