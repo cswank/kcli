@@ -49,6 +49,12 @@ func (p *pages) current() page {
 	return p.p[l-1]
 }
 
+func (p *pages) currentRow() row {
+	l := len(p.p)
+	page := p.p[l-1]
+	return page.body[page.page][page.cursor]
+}
+
 func (p *pages) sel(cur int) (page, row) {
 	l := len(p.p)
 	page := p.p[l-1]
@@ -73,7 +79,14 @@ func (p *pages) add(n page) {
 }
 
 func (p *pages) search(s string) error {
-	return nil
+	row := p.currentRow()
+	msg := row.args.(kafka.Msg)
+	n, err := kafka.Search(msg.Partition, s)
+	if err != nil || n == int64(-1) {
+		return err
+	}
+
+	return p.jump(n)
 }
 
 func (p *pages) jump(n int64) error {

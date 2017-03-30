@@ -36,3 +36,7 @@ func mockFetch(_ Partition, _ int64, cb func(string)) error {
 
 	return nil
 }
+
+func mockSearch(info Partition, s string) (int64, error) {
+	return int64(-1), nil
+}
