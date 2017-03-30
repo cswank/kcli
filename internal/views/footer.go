@@ -2,11 +2,9 @@ package views
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 
-	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -16,8 +14,9 @@ var (
 )
 
 type footer struct {
-	name   string
-	coords coords
+	name     string
+	coords   coords
+	function string
 }
 
 func newFooter(w, h int) *footer {
@@ -34,7 +33,7 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 		s = s[:len(s)-1]
 		v.Write([]byte(s))
 		v.SetCursor(len(s), 0)
-	} else if f.isNum(string(ch)) {
+	} else if f.acceptable(string(ch)) {
 		fmt.Fprint(v, string(ch))
 		s = v.Buffer()
 		v.SetCursor(len(s)-1, 0)
@@ -49,30 +48,38 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 		return nil
 	}
 
-	n, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
-	if err != nil {
-		return err
+	switch f.function {
+	case "jump":
+		n, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+		if err != nil {
+			return err
+		}
+		if err := pg.jump(n); err != nil {
+			return err
+		}
+	case "search":
+		if err := pg.search(strings.TrimSpace(parts[1])); err != nil {
+			return err
+		}
 	}
-
-	p := pg.pop()
-	row := p.body[0][0]
-	msg := row.args.(kafka.Msg)
-	part := msg.Partition
-	part.Offset = n
-	p, err = getPartition(bod.size, part)
-	if err != nil {
-		return err
-	}
-
-	log.Println(p)
-	pg.add(p)
 
 	v.Clear()
-	_, err = g.SetCurrentView(bod.name)
+	_, err := g.SetCurrentView(bod.name)
 	return err
 }
 
 func (f *footer) acceptable(s string) bool {
+	switch f.function {
+	case "search":
+		return f.isChar(s)
+	case "jump":
+		return f.isNum(s)
+	default:
+		return false
+	}
+}
+
+func (f *footer) isChar(s string) bool {
 	return strings.Contains(chars, s)
 }
 

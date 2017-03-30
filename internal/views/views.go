@@ -161,7 +161,27 @@ func jump(g *ui.Gui, v *ui.View) error {
 
 	v.Clear()
 	v.Write([]byte("jump: "))
+	foot.function = "jump"
 	return v.SetCursor(6, 0)
+}
+
+func search(g *ui.Gui, v *ui.View) error {
+	p := pg.current()
+	if p.name != "partition" {
+		return nil
+	}
+
+	var err error
+	currentView = foot.name
+	v, err = g.SetCurrentView(foot.name)
+	if err != nil {
+		return err
+	}
+
+	v.Clear()
+	v.Write([]byte("search: "))
+	foot.function = "search"
+	return v.SetCursor(8, 0)
 }
 
 func dump(g *ui.Gui, v *ui.View) error {

@@ -1,5 +1,7 @@
 package views
 
+import "github.com/cswank/kcli/internal/kafka"
+
 type page struct {
 	name   string
 	page   int
@@ -70,6 +72,26 @@ func (p *pages) add(n page) {
 	p.p = append(p.p, n)
 }
 
+func (p *pages) search(s string) error {
+	return nil
+}
+
+func (p *pages) jump(n int64) error {
+	page := pg.pop()
+	row := page.body[0][0]
+	msg := row.args.(kafka.Msg)
+	part := msg.Partition
+	part.Offset = n
+	var err error
+	page, err = getPartition(bod.size, part)
+	if err != nil {
+		return err
+	}
+
+	p.add(page)
+	return nil
+}
+
 func (p *pages) forward() error {
 	l := len(p.p)
 	if l == 0 {
@@ -80,6 +102,10 @@ func (p *pages) forward() error {
 	if page.page < len(page.body)-1 {
 		page.page++
 		p.p[l-1] = page
+		return nil
+	}
+
+	if page.forward == nil {
 		return nil
 	}
 
