@@ -186,14 +186,27 @@ func search(g *ui.Gui, v *ui.View) error {
 
 func dump(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
-	_, r := pg.sel(cur)
-	msg := r.args.(kafka.Msg)
-	part := msg.Partition
-	After = func() {
-		kafka.Fetch(part, part.End, func(s string) {
-			fmt.Println(s)
-		})
+	page, r := pg.sel(cur)
+	switch page.name {
+	case "partition":
+		msg := r.args.(kafka.Msg)
+		part := msg.Partition
+		After = func() {
+			kafka.Fetch(part, part.End, func(s string) {
+				fmt.Println(s)
+			})
+		}
+	default:
+		After = func() {
+			fmt.Println(page.header)
+			for _, rows := range page.body {
+				for _, s := range rows {
+					fmt.Println(s.value)
+				}
+			}
+		}
 	}
+
 	return ui.ErrQuit
 }
 

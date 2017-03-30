@@ -191,7 +191,7 @@ func consume(info Partition, end int64, cb func(string) bool) error {
 		select {
 		case msg := <-pc.Messages():
 			if stop := cb(string(msg.Value)); stop {
-				break
+				return nil
 			}
 		case <-time.After(time.Second):
 			break
