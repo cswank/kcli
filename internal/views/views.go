@@ -110,6 +110,20 @@ func prev(g *ui.Gui, v *ui.View) error {
 	return v.SetCursor(0, cur)
 }
 
+func forward(g *ui.Gui, v *ui.View) error {
+	if err := pg.forward(); err != nil {
+		return err
+	}
+	return v.SetCursor(0, 0)
+}
+
+func back(g *ui.Gui, v *ui.View) error {
+	if err := pg.back(); err != nil {
+		return err
+	}
+	return v.SetCursor(0, 0)
+}
+
 //sel gets called when the user hits the enter key.
 //The item under the cursor is selected and the next()
 //func is called to get then next page.

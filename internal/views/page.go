@@ -8,8 +8,13 @@ type page struct {
 	cursor int
 
 	next    func(int, interface{}) (page, error)
-	forward func(int, interface{}) ([]row, error)
-	back    func(int, interface{}) ([]row, error)
+	forward func() ([]row, error)
+	back    func() error
+}
+
+func (p *page) lastRow() row {
+	r := p.body[p.page]
+	return r[len(r)-1]
 }
 
 type pages struct {
@@ -31,9 +36,10 @@ func (p *pages) cursor() int {
 	return p.p[l-1].cursor
 }
 
-func (p *pages) body(page int) []row {
+func (p *pages) body() []row {
 	l := len(p.p)
-	return p.p[l-1].body[page]
+	page := p.p[l-1]
+	return page.body[page.page]
 }
 
 func (p *pages) current() page {
@@ -62,4 +68,44 @@ func (p *pages) pop() page {
 
 func (p *pages) add(n page) {
 	p.p = append(p.p, n)
+}
+
+func (p *pages) forward() error {
+	l := len(p.p)
+	if l == 0 {
+		return nil
+	}
+
+	page := p.p[l-1]
+	if page.page < len(page.body)-1 {
+		page.page++
+		p.p[l-1] = page
+		return nil
+	}
+
+	rows, err := page.forward()
+	if err != nil {
+		return err
+	}
+
+	page.body = append(page.body, rows)
+	page.page++
+	p.p[l-1] = page
+	return nil
+}
+
+func (p *pages) back() error {
+	l := len(p.p)
+	if l == 0 {
+		return nil
+	}
+
+	page := p.p[l-1]
+	if page.page == 0 {
+		return nil
+	}
+
+	page.page--
+	p.p[l-1] = page
+	return nil
 }

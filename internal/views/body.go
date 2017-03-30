@@ -6,7 +6,6 @@ type body struct {
 	size   int
 	name   string
 	coords coords
-	page   int
 }
 
 func newBody(w, h int) *body {
@@ -19,7 +18,7 @@ func newBody(w, h int) *body {
 
 func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
-	body := pg.body(b.page)
+	body := pg.body()
 	for _, r := range body {
 		_, err := v.Write(append([]byte(c2(r.value)), []byte("\n")...))
 		if err != nil {

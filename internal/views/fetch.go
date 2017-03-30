@@ -71,20 +71,44 @@ func getPartition(size int, i interface{}) (page, error) {
 		return page{}, fmt.Errorf("getPartition could not accept arg: %v", i)
 	}
 
-	msgs, err := kafka.GetPartition(partition, size)
+	rows, err := getPartitionRows(size, partition)
 	if err != nil {
 		return page{}, err
 	}
 
 	return page{
-		name:   "partition",
-		header: c1(fmt.Sprintf("offset       message (topic: %s partition: %d start: %d end: %d)\n", partition.Topic, partition.Partition, partition.Start, partition.End)),
-		body:   getMsgsRows(size, msgs),
-		next:   getMessage,
+		name:    "partition",
+		header:  c1(fmt.Sprintf("offset       message (topic: %s partition: %d start: %d end: %d)\n", partition.Topic, partition.Partition, partition.Start, partition.End)),
+		body:    split(rows, size),
+		next:    getMessage,
+		forward: nextPartitionPage,
 	}, nil
 }
 
-func getMsgsRows(size int, msgs []kafka.Msg) [][]row {
+func nextPartitionPage() ([]row, error) {
+	page := pg.current()
+	r := page.lastRow()
+	msg, ok := r.args.(kafka.Msg)
+	if !ok {
+		return nil, fmt.Errorf("wrong arg: %v", r.args)
+	}
+
+	p := msg.Partition
+	p.Offset = msg.Offset + 1
+
+	return getPartitionRows(bod.size, p)
+}
+
+func getPartitionRows(size int, partition kafka.Partition) ([]row, error) {
+	msgs, err := kafka.GetPartition(partition, size)
+	if err != nil {
+		return nil, err
+	}
+
+	return getMsgsRows(msgs), nil
+}
+
+func getMsgsRows(msgs []kafka.Msg) []row {
 	r := make([]row, len(msgs))
 	for i, m := range msgs {
 		r[i] = row{
@@ -92,7 +116,8 @@ func getMsgsRows(size int, msgs []kafka.Msg) [][]row {
 			value: fmt.Sprintf("%d: %s", m.Partition.Offset, string(m.Value)),
 		}
 	}
-	return split(r, size)
+
+	return r
 }
 
 func getMessage(size int, i interface{}) (page, error) {
