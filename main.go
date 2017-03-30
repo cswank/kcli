@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io/ioutil"
 	"log"
 	"os"
 
@@ -29,6 +30,8 @@ func init() {
 			log.Fatal(err)
 		}
 		log.SetOutput(f)
+	} else {
+		log.SetOutput(ioutil.Discard)
 	}
 
 	if os.Getenv("KCLI_FAKE") != "true" {
