@@ -38,8 +38,8 @@ For example:
 
     $ KCLI_COLOR1=red KCLI_COLOR2=yellow kcli
 
-See it in action at [asciinema](https://asciinema.org/a/110040)
+See it in action at [asciinema](https://asciinema.org/a/110096)
 
-[![asciicast](https://asciinema.org/a/110040.png)]()
+[![asciicast](https://asciinema.org/a/110096.png)]()
 
 
