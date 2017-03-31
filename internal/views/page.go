@@ -94,10 +94,16 @@ func (p *pages) jump(n int64) error {
 	row := page.body[0][0]
 	msg := row.args.(kafka.Msg)
 	part := msg.Partition
+	if n >= part.End || n < 0 {
+		p.add(page)
+		return nil
+	}
+
 	part.Offset = n
 	var err error
 	page, err = getPartition(bod.size, part)
 	if err != nil {
+		p.add(page)
 		return err
 	}
 
@@ -125,6 +131,10 @@ func (p *pages) forward() error {
 	rows, err := page.forward()
 	if err != nil {
 		return err
+	}
+
+	if rows == nil {
+		return nil
 	}
 
 	page.body = append(page.body, rows)

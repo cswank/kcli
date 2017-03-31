@@ -96,7 +96,7 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 
 func next(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
-	if cur < bod.size-1 {
+	if cur < bod.size-1 && cur < len(pg.body())-1 {
 		cur++
 	}
 	return v.SetCursor(0, cur)

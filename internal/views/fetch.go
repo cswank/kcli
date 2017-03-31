@@ -78,7 +78,7 @@ func getPartition(size int, i interface{}) (page, error) {
 
 	return page{
 		name:    "partition",
-		header:  c1(fmt.Sprintf("offset       message (topic: %s partition: %d start: %d end: %d)", partition.Topic, partition.Partition, partition.Start, partition.End)),
+		header:  c1(fmt.Sprintf("offset       message    topic: %s partition: %d start: %d end: %d", partition.Topic, partition.Partition, partition.Start, partition.End)),
 		body:    split(rows, size),
 		next:    getMessage,
 		forward: nextPartitionPage,
@@ -94,6 +94,9 @@ func nextPartitionPage() ([]row, error) {
 	}
 
 	p := msg.Partition
+	if p.Offset+1 >= p.End {
+		return nil, nil
+	}
 	p.Offset = msg.Offset + 1
 
 	return getPartitionRows(bod.size, p)
@@ -113,7 +116,7 @@ func getMsgsRows(msgs []kafka.Msg) []row {
 	for i, m := range msgs {
 		r[i] = row{
 			args:  m,
-			value: fmt.Sprintf("%d: %s", m.Partition.Offset, string(m.Value)),
+			value: fmt.Sprintf("%-12d %s", m.Partition.Offset, string(m.Value)),
 		}
 	}
 
@@ -139,7 +142,7 @@ func getMessage(size int, i interface{}) (page, error) {
 
 	return page{
 		name:   "message",
-		header: c1(fmt.Sprintf("topic: %s partition: %d offset: %d)", msg.Partition.Topic, msg.Partition.Partition, msg.Offset)),
+		header: c1(fmt.Sprintf("topic: %s partition: %d offset: %d", msg.Partition.Topic, msg.Partition.Partition, msg.Offset)),
 		body:   split(out, size),
 	}, nil
 }
