@@ -15,7 +15,7 @@ import (
 var (
 	g      *ui.Gui
 	addrs  = kingpin.Flag("addresses", "comma seperated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
-	logout = kingpin.Flag("logs", "for debugging, set the log output to a file").Short('l').String()
+	logout = kingpin.Flag("log", "for debugging, set the log output to a file").Short('l').String()
 
 	f *os.File
 )

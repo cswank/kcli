@@ -64,7 +64,10 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 	}
 
 	v.Clear()
-	_, err := g.SetCurrentView(bod.name)
+
+	var err error
+	v, err = g.SetCurrentView(bod.name)
+	v.SetCursor(0, 0)
 	return err
 }
 
