@@ -26,6 +26,10 @@ func newFooter(w, h int) *footer {
 	}
 }
 
+func (f *footer) resize(w, h int) {
+	f.coords = coords{x1: -1, y1: h - 2, x2: w, y2: h}
+}
+
 func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	s := strings.TrimSpace(v.Buffer())
 	if key == 127 && len(s) > 0 {

@@ -16,6 +16,10 @@ func newHeader(w, h int) *header {
 	}
 }
 
+func (h *header) resize(w, _ int) {
+	h.coords = coords{x1: -1, y1: -1, x2: w, y2: 1}
+}
+
 func (h *header) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
 	_, err := v.Write([]byte(c1(pg.header())))

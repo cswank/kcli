@@ -28,6 +28,12 @@ func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	return nil
 }
 
+func (b *body) resize(w, h int) {
+	b.size = h - 2
+	b.coords = coords{x1: -1, y1: 0, x2: w, y2: h - 1}
+	pg.resize(b.size)
+}
+
 func (b *body) Select(g *ui.Gui, v *ui.View) error {
 	return nil
 }

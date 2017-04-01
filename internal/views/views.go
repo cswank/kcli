@@ -52,7 +52,6 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 	currentView = bod.name
 
 	p, err := getTopics(bod.size, "")
-	log.Println("topics", p, err)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -62,6 +61,14 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 	}
 
 	return func(g *ui.Gui) error {
+		w, h := g.Size()
+		if h != height || w != width {
+			width = w
+			height = h
+			head.resize(w, h)
+			bod.resize(w, h)
+			foot.resize(w, h)
+		}
 		v, err := g.SetView(head.name, head.coords.x1, head.coords.y1, head.coords.x2, head.coords.y2)
 		if err != nil && err != ui.ErrUnknownView {
 			return err

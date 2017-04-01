@@ -15,8 +15,19 @@ type page struct {
 }
 
 func (p *page) lastRow() row {
+
 	r := p.body[p.page]
 	return r[len(r)-1]
+}
+
+func (p *page) resize(s int) {
+	p.cursor = 0
+	p.page = 0
+	var rows []row
+	for _, r := range p.body {
+		rows = append(rows, r...)
+	}
+	p.body = split(rows, s)
 }
 
 type pages struct {
@@ -26,6 +37,13 @@ type pages struct {
 type row struct {
 	args  interface{}
 	value string
+}
+
+func (p *pages) resize(s int) {
+	for i, page := range p.p {
+		page.resize(s)
+		p.p[i] = page
+	}
 }
 
 func (p *pages) header() string {
