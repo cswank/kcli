@@ -19,7 +19,6 @@ var (
   %-15s %62s
   %-15s %62s
   %-15s %62s
-  %-15s %62s
   %-15s %62s`
 )
 
@@ -37,7 +36,7 @@ func newHelp(w, h int) *help {
 func getHelpCoords(g *ui.Gui) coords {
 	maxX, maxY := g.Size()
 	width := 62
-	height := 13
+	height := 12
 	x1 := maxX/2 - width/2
 	x2 := maxX/2 + width/2
 	y1 := maxY/2 - height/2
@@ -100,8 +99,6 @@ func getHelpMsg() []byte {
 		c1("jump to a kafka offset"),
 		c3("s"),
 		c1("search kafka messages"),
-		c3("c"),
-		c1("copy item at cursor to clipboard"),
 		c3("h"),
 		c1("toggle help"),
 		c3("q"),
