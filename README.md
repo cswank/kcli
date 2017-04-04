@@ -40,6 +40,6 @@ For example:
 
 See it in action at [asciinema](https://asciinema.org/a/110096)
 
-[![asciicast](https://asciinema.org/a/110096.png)]()
+[![asciicast](https://asciinema.org/a/110096.png)](https://asciinema.org/a/110096)
 
 
