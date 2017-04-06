@@ -150,7 +150,8 @@ func getMessage(size int, i interface{}) (page, error) {
 func getPrettyMsg(data []byte) (io.Reader, error) {
 	var m map[string]interface{}
 	if err := json.Unmarshal(data, &m); err != nil {
-		return nil, err
+		//not json, so return original data
+		return bytes.NewBuffer(data), nil
 	}
 
 	d, err := colors.Marshal(m)
