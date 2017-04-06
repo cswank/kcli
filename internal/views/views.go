@@ -144,6 +144,10 @@ func sel(g *ui.Gui, v *ui.View) error {
 		return err
 	}
 
+	if len(n.body) == 0 {
+		return nil
+	}
+
 	pg.add(n)
 	return v.SetCursor(0, 0)
 }
