@@ -15,12 +15,16 @@ func Keybindings(g *ui.Gui) error {
 
 	keys := []key{
 		{bod.name, 'n', ui.ModNone, next},
+		{bod.name, ui.KeyCtrlN, ui.ModNone, next},
 		{bod.name, ui.KeyArrowDown, ui.ModNone, next},
 		{bod.name, 'p', ui.ModNone, prev},
+		{bod.name, ui.KeyCtrlP, ui.ModNone, prev},
 		{bod.name, ui.KeyArrowUp, ui.ModNone, prev},
 		{bod.name, 'f', ui.ModNone, forward},
+		{bod.name, ui.KeyCtrlF, ui.ModNone, forward},
 		{bod.name, ui.KeyArrowRight, ui.ModNone, forward},
 		{bod.name, 'b', ui.ModNone, back},
+		{bod.name, ui.KeyCtrlB, ui.ModNone, back},
 		{bod.name, ui.KeyArrowLeft, ui.ModNone, back},
 		{bod.name, ui.KeyEnter, ui.ModNone, sel},
 		{bod.name, ui.KeyEsc, ui.ModNone, popPage},

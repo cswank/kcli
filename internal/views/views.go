@@ -151,6 +151,7 @@ func sel(g *ui.Gui, v *ui.View) error {
 	}
 
 	if len(n.body) == 0 {
+		msgs <- "nothing to see here"
 		return nil
 	}
 
