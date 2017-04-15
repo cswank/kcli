@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/cswank/kcli/internal/colors"
 	"github.com/cswank/kcli/internal/kafka"
@@ -23,9 +24,12 @@ var (
 
 	//After gets called by main when the gui is closed (if it's not nil)
 	After func()
+
+	msgs chan string
 )
 
 func init() {
+	msgs = make(chan string)
 	c1, c2, c3 = getColors()
 	helpMsg = getHelpMsg()
 }
@@ -41,7 +45,7 @@ type View interface {
 	Render(g *ui.Gui, v *ui.View) error
 }
 
-func GetLayout(width, height int) func(g *ui.Gui) error {
+func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 	head = newHeader(width, height)
 	bod = newBody(width, height)
 	foot = newFooter(width, height)
@@ -59,6 +63,8 @@ func GetLayout(width, height int) func(g *ui.Gui) error {
 	pg = pages{
 		p: []page{p},
 	}
+
+	go flashMessage(g)
 
 	return func(g *ui.Gui) error {
 		w, h := g.Size()
@@ -223,4 +229,27 @@ func dump(g *ui.Gui, v *ui.View) error {
 
 func quit(g *ui.Gui, v *ui.View) error {
 	return ui.ErrQuit
+}
+
+func flashMessage(g *ui.Gui) {
+	dur := time.Second * 2
+	for {
+		select {
+		case m := <-msgs:
+			dur = time.Second * 2
+			writeMsg(g, m)
+		case <-time.After(dur):
+			dur = time.Second * 1000
+			writeMsg(g, "")
+		}
+	}
+}
+
+func writeMsg(g *ui.Gui, msg string) {
+	g.Execute(func(g *ui.Gui) error {
+		v, _ := g.View("footer")
+		v.Clear()
+		fmt.Fprint(v, msg)
+		return nil
+	})
 }

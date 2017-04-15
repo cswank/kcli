@@ -101,6 +101,7 @@ func (p *pages) search(s string) error {
 	msg := row.args.(kafka.Msg)
 	n, err := kafka.Search(msg.Partition, s)
 	if err != nil || n == int64(-1) {
+		msgs <- "not found"
 		return err
 	}
 

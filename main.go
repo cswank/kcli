@@ -48,7 +48,7 @@ func main() {
 	}
 
 	w, h := g.Size()
-	g.SetManagerFunc(views.GetLayout(w, h))
+	g.SetManagerFunc(views.GetLayout(g, w, h))
 	g.Cursor = true
 	g.InputEsc = true
 
