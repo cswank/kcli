@@ -186,6 +186,7 @@ func jump(g *ui.Gui, v *ui.View) error {
 func search(g *ui.Gui, v *ui.View) error {
 	p := pg.current()
 	if p.name != "partition" {
+		msgs <- "you can only search a partition"
 		return nil
 	}
 
