@@ -58,7 +58,7 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 		if err != nil {
 			return err
 		}
-		if err := pg.jump(n); err != nil {
+		if err := pg.jump(n, ""); err != nil {
 			return err
 		}
 	case "search":

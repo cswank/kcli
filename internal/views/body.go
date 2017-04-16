@@ -1,6 +1,11 @@
 package views
 
-import ui "github.com/jroimartin/gocui"
+import (
+	"fmt"
+	"strings"
+
+	ui "github.com/jroimartin/gocui"
+)
 
 type body struct {
 	size   int
@@ -18,14 +23,34 @@ func newBody(w, h int) *body {
 
 func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
-	body := pg.body()
+	body, page := pg.body()
 	for _, r := range body {
-		_, err := v.Write(append([]byte(c2(r.value)), []byte("\n")...))
+		_, err := v.Write(append([]byte(b.color(r.value, page.search)), []byte("\n")...))
 		if err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func (b *body) color(val, search string) string {
+	if search == "" {
+		return c2(val)
+	}
+	i := strings.Index(val, search)
+	if i == -1 {
+		return c2(val)
+	}
+
+	var s1 string
+	if i > 13 {
+		s1 = fmt.Sprintf("%s...", val[0:13])
+	} else {
+		s1 = val[0:13]
+	}
+	s2 := val[i : i+len(search)]
+	s3 := val[i+len(search):]
+	return fmt.Sprintf("%s%s%s", c2(s1), c3(s2), c2(s3))
 }
 
 func (b *body) resize(w, h int) {

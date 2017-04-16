@@ -109,7 +109,8 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 
 func next(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
-	if cur < bod.size-1 && cur < len(pg.body())-1 {
+	b, _ := pg.body()
+	if cur < bod.size-1 && cur < len(b)-1 {
 		cur++
 	}
 	return v.SetCursor(0, cur)
@@ -167,6 +168,7 @@ func popPage(g *ui.Gui, v *ui.View) error {
 func jump(g *ui.Gui, v *ui.View) error {
 	p := pg.current()
 	if p.name != "partition" {
+		msgs <- "you can only jump within a partition"
 		return nil
 	}
 

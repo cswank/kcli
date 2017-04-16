@@ -8,6 +8,7 @@ type page struct {
 	header string
 	body   [][]row
 	cursor int
+	search string
 
 	next    func(int, interface{}) (page, error)
 	forward func() ([]row, error)
@@ -56,10 +57,10 @@ func (p *pages) cursor() int {
 	return p.p[l-1].cursor
 }
 
-func (p *pages) body() []row {
+func (p *pages) body() ([]row, page) {
 	l := len(p.p)
 	page := p.p[l-1]
-	return page.body[page.page]
+	return page.body[page.page], page
 }
 
 func (p *pages) current() page {
@@ -105,15 +106,16 @@ func (p *pages) search(s string) error {
 		return err
 	}
 
-	return p.jump(n)
+	return p.jump(n, s)
 }
 
-func (p *pages) jump(n int64) error {
+func (p *pages) jump(n int64, s string) error {
 	page := pg.pop()
 	row := page.body[0][0]
 	msg := row.args.(kafka.Msg)
 	part := msg.Partition
 	if n >= part.End || n < 0 {
+		msgs <- "invalid offset"
 		p.add(page)
 		return nil
 	}
@@ -126,6 +128,7 @@ func (p *pages) jump(n int64) error {
 		return err
 	}
 
+	page.search = s
 	p.add(page)
 	return nil
 }
