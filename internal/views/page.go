@@ -100,6 +100,22 @@ func (p *pages) add(n page) {
 func (p *pages) search(s string) error {
 	row := p.currentRow()
 	msg := row.args.(kafka.Msg)
+
+	if s == "" {
+		s = p.current().search
+		if s == "" {
+			return nil
+		}
+
+		//using the previous search term, moving one offset
+		//forward to skip the previous search result
+		msg.Partition.Offset++
+	} else {
+		page := p.pop()
+		page.search = s
+		p.add(page)
+	}
+
 	n, err := kafka.Search(msg.Partition, s)
 	if err != nil || n == int64(-1) {
 		msgs <- "not found"

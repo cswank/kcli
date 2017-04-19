@@ -1,13 +1,22 @@
-version: '2'
+version: '2.1'
+
 services:
   zk:
     image: wurstmeister/zookeeper
+    healthcheck:
+      test: "./bin/zkCli.sh ls /"
+      interval: 10s
+      retries: 12
+
   kafka:
     image: wurstmeister/kafka
+    depends_on:
+      zk:
+        condition: service_healthy
     ports:
       - "9092:9092"
     environment:
-      KAFKA_ADVERTISED_HOST_NAME: 192.168.1.17
+      KAFKA_ADVERTISED_HOST_NAME: 192.168.1.21
       KAFKA_ADVERTISED_PORT: 9092
       KAFKA_ZOOKEEPER_CONNECT: zk:2181
       KAFKA_CREATE_TOPICS: "stuff:10:1,things:20:1,whatnot:50:1"
