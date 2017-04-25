@@ -98,7 +98,7 @@ func getHelpMsg() []byte {
 		c3("j"),
 		c1("jump to a kafka offset"),
 		c3("s"),
-		c1("search kafka messages"),
+		c1("(or /) search kafka messages"),
 		c3("h"),
 		c1("toggle help"),
 		c3("q"),

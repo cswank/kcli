@@ -188,6 +188,18 @@ func (p *pages) back() error {
 	}
 
 	page := p.p[l-1]
+
+	if page.name == "partition" && page.page == 0 {
+		row := page.body[0][0]
+		msg := row.args.(kafka.Msg)
+		part := msg.Partition
+		n := part.Offset - int64(bod.size)
+		if n < 0 {
+			n = 0
+		}
+		return p.jump(n, "")
+	}
+
 	if page.page == 0 {
 		return nil
 	}
