@@ -71,7 +71,16 @@ func getPartition(size int, i interface{}) (page, error) {
 		return page{}, fmt.Errorf("getPartition could not accept arg: %v", i)
 	}
 
-	rows, err := getPartitionRows(size, partition)
+	var f func([]byte) bool
+	if partition.Filter != "" {
+		f = func(val []byte) bool {
+			return bytes.Contains(val, []byte(partition.Filter))
+		}
+	} else {
+		f = func(val []byte) bool { return true }
+	}
+
+	rows, err := getPartitionRows(size, partition, f)
 	if err != nil {
 		return page{}, err
 	}
@@ -99,11 +108,20 @@ func nextPartitionPage() ([]row, error) {
 	}
 	p.Offset = msg.Offset + 1
 
-	return getPartitionRows(bod.size, p)
+	var f func([]byte) bool
+	if page.filter && page.search != "" {
+		f = func(val []byte) bool {
+			return bytes.Contains(val, []byte(page.search))
+		}
+	} else {
+		f = func(val []byte) bool { return true }
+	}
+
+	return getPartitionRows(bod.size, p, f)
 }
 
-func getPartitionRows(size int, partition kafka.Partition) ([]row, error) {
-	msgs, err := kafka.GetPartition(partition, size)
+func getPartitionRows(size int, partition kafka.Partition, f func([]byte) bool) ([]row, error) {
+	msgs, err := kafka.GetPartition(partition, size, f)
 	if err != nil {
 		return nil, err
 	}

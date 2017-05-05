@@ -44,8 +44,18 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	}
 }
 
-func (f *footer) exit(g *ui.Gui, v *ui.View) error {
+func (f *footer) bail(g *ui.Gui, v *ui.View) error {
 	currentView = bod.name
+	v.Clear()
+	var err error
+	v, err = g.SetCurrentView(bod.name)
+	if err != nil {
+		return err
+	}
+	return v.SetCursor(0, 0)
+}
+
+func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 	s := v.Buffer()
 	parts := strings.Split(s, ":")
 	if len(parts) != 2 {
@@ -58,6 +68,11 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 		if err != nil {
 			return err
 		}
+		page := pg.pop()
+		page.search = ""
+		page.filter = false
+		pg.add(page)
+
 		if err := pg.jump(n, ""); err != nil {
 			return err
 		}
@@ -65,19 +80,20 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 		if err := pg.search(strings.TrimSpace(parts[1])); err != nil {
 			return err
 		}
+	case "filter":
+		if err := pg.filter(strings.TrimSpace(parts[1])); err != nil {
+			return err
+		}
 	}
 
-	v.Clear()
-
-	var err error
-	v, err = g.SetCurrentView(bod.name)
-	v.SetCursor(0, 0)
-	return err
+	return f.bail(g, v)
 }
 
 func (f *footer) acceptable(s string) bool {
 	switch f.function {
 	case "search":
+		return f.isChar(s)
+	case "filter":
 		return f.isChar(s)
 	case "jump":
 		return f.isNum(s)

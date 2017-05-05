@@ -9,6 +9,7 @@ type page struct {
 	body   [][]row
 	cursor int
 	search string
+	filter bool
 
 	next    func(int, interface{}) (page, error)
 	forward func() ([]row, error)
@@ -74,6 +75,13 @@ func (p *pages) currentRow() row {
 	return page.body[page.page][page.cursor]
 }
 
+func (p *pages) lastRow() row {
+	l := len(p.p)
+	page := p.p[l-1]
+	rows := page.body[page.page]
+	return rows[len(rows)-1]
+}
+
 func (p *pages) sel(cur int) (page, row) {
 	l := len(p.p)
 	page := p.p[l-1]
@@ -95,6 +103,24 @@ func (p *pages) pop() page {
 
 func (p *pages) add(n page) {
 	p.p = append(p.p, n)
+}
+
+func (p *pages) filter(s string) error {
+	row := p.currentRow()
+	msg := row.args.(kafka.Msg)
+
+	if s == "" {
+		s = p.current().search
+		if s == "" {
+			return nil
+		}
+	}
+
+	page := p.pop()
+	page.search = s
+	page.filter = true
+	p.add(page)
+	return p.jump(msg.Offset, s)
 }
 
 func (p *pages) search(s string) error {
@@ -127,9 +153,13 @@ func (p *pages) search(s string) error {
 
 func (p *pages) jump(n int64, s string) error {
 	page := pg.pop()
+	f := page.filter
 	row := page.body[0][0]
 	msg := row.args.(kafka.Msg)
 	part := msg.Partition
+	if page.filter {
+		part.Filter = page.search
+	}
 	if n >= part.End || n < 0 {
 		msgs <- "invalid offset"
 		p.add(page)
@@ -145,6 +175,7 @@ func (p *pages) jump(n int64, s string) error {
 	}
 
 	page.search = s
+	page.filter = f
 	p.add(page)
 	return nil
 }
@@ -189,7 +220,7 @@ func (p *pages) back() error {
 
 	page := p.p[l-1]
 
-	if page.name == "partition" && page.page == 0 {
+	if page.name == "partition" && page.page == 0 && !page.filter {
 		row := page.body[0][0]
 		msg := row.args.(kafka.Msg)
 		part := msg.Partition

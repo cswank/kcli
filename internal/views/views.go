@@ -3,6 +3,7 @@ package views
 import (
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/cswank/kcli/internal/colors"
@@ -189,9 +190,36 @@ func jump(g *ui.Gui, v *ui.View) error {
 	return v.SetCursor(6, 0)
 }
 
+func clearFilter(g *ui.Gui, v *ui.View) error {
+	page := pg.pop()
+	page.search = ""
+	page.filter = false
+	pg.add(page)
+	return pg.jump(0, "")
+}
+
+func filter(g *ui.Gui, v *ui.View) error {
+	p := pg.current()
+	if p.name != "partition" {
+		msgs <- "you can only filter a partition"
+		return nil
+	}
+
+	var err error
+	currentView = foot.name
+	v, err = g.SetCurrentView(foot.name)
+	if err != nil {
+		return err
+	}
+
+	v.Clear()
+	v.Write([]byte("filter: "))
+	foot.function = "filter"
+	return v.SetCursor(8, 0)
+}
+
 func search(g *ui.Gui, v *ui.View) error {
 	p := pg.current()
-	log.Println("search", p.name)
 	if p.name != "partition" {
 		msgs <- "you can only search a partition"
 		return nil
@@ -213,13 +241,26 @@ func search(g *ui.Gui, v *ui.View) error {
 func dump(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
 	page, r := pg.sel(cur)
+	var print func(string)
+	if page.filter {
+		print = func(s string) {
+			if strings.Contains(s, page.search) {
+				fmt.Println(s)
+			}
+		}
+	} else {
+		print = func(s string) {
+			fmt.Println(s)
+		}
+	}
+
 	switch page.name {
 	case "partition":
 		msg := r.args.(kafka.Msg)
 		part := msg.Partition
 		After = func() {
 			kafka.Fetch(part, part.End, func(s string) {
-				fmt.Println(s)
+				print(s)
 			})
 		}
 	default:
@@ -241,14 +282,14 @@ func quit(g *ui.Gui, v *ui.View) error {
 }
 
 func flashMessage(g *ui.Gui) {
-	dur := time.Second * 2
+	dur := time.Second * 100000
 	for {
 		select {
 		case m := <-msgs:
 			dur = time.Second * 2
 			writeMsg(g, m)
 		case <-time.After(dur):
-			dur = time.Second * 1000
+			dur = time.Second * 100000
 			writeMsg(g, "")
 		}
 	}

@@ -38,7 +38,7 @@ func main() {
 	}()
 
 	for topic, tpl := range topics {
-		for i := 0; i < 500; i++ {
+		for i := 0; i < 5000; i++ {
 			first := randName(firstNames)
 			last := randName(lastNames)
 			age := randAge()

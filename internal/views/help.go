@@ -19,7 +19,10 @@ var (
   %-15s %62s
   %-15s %62s
   %-15s %62s
-  %-15s %62s`
+  %-15s %62s
+  %-15s %62s
+  %-15s %62s
+                 note: C-f means Control f`
 )
 
 type help struct {
@@ -36,7 +39,7 @@ func newHelp(w, h int) *help {
 func getHelpCoords(g *ui.Gui) coords {
 	maxX, maxY := g.Size()
 	width := 62
-	height := 12
+	height := 15
 	x1 := maxX/2 - width/2
 	x2 := maxX/2 + width/2
 	y1 := maxY/2 - height/2
@@ -81,13 +84,13 @@ func (h *help) hide(g *ui.Gui, v *ui.View) error {
 func getHelpMsg() []byte {
 	return []byte(fmt.Sprintf(
 		tpl,
-		c3("n"),
+		c3("C-n"),
 		c1("(or down arrow) move cursor down"),
-		c3("p"),
+		c3("C-p"),
 		c1("(or up arrow) move cursor up"),
-		c3("f"),
+		c3("C-f"),
 		c1("(or right arrow) forward to next page"),
-		c3("b"),
+		c3("C-b"),
 		c1("(or left arrow) backward to prev page"),
 		c3("enter"),
 		c1("view item at cursor"),
@@ -99,6 +102,10 @@ func getHelpMsg() []byte {
 		c1("jump to a kafka offset"),
 		c3("s"),
 		c1("(or /) search kafka messages"),
+		c3("f"),
+		c1("filter kafka messages"),
+		c3("F"),
+		c1("clear filter"),
 		c3("h"),
 		c1("toggle help"),
 		c3("q"),
