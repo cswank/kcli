@@ -146,6 +146,10 @@ func sel(g *ui.Gui, v *ui.View) error {
 	_, size := v.Size()
 
 	p, r := pg.sel(cur)
+	if p.name == "message" {
+		return nil
+	}
+
 	n, err := p.next(size, r.args)
 	if err != nil {
 		return err
