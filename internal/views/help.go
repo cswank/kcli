@@ -12,7 +12,7 @@ var (
 	helpHeight = 15
 	helpMsg    []byte
 
-	tpl = `%s            C-x means Control x`
+	tpl = `%s             C-x means Control x`
 
 	helpMsgs = []keyHelp{
 		{key: "C-n", body: "(or down arrow) move cursor down"},
@@ -27,7 +27,7 @@ var (
 		{key: "f", body: "filter kafka messages"},
 		{key: "F", body: "clear filter"},
 		{key: "h", body: "toggle help"},
-		{key: "q", body: "quit"},
+		{key: "q", body: "(or C-c) quit"},
 	}
 )
 

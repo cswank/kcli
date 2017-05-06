@@ -12,7 +12,6 @@ type key struct {
 }
 
 func Keybindings(g *ui.Gui) error {
-
 	keys := []key{
 		{bod.name, ui.KeyCtrlN, ui.ModNone, next},
 		{bod.name, ui.KeyArrowDown, ui.ModNone, next},
@@ -37,6 +36,7 @@ func Keybindings(g *ui.Gui) error {
 		{bod.name, 'q', ui.ModNone, quit},
 		{hlp.name, 'q', ui.ModNone, quit},
 		{bod.name, ui.KeyCtrlC, ui.ModNone, quit},
+		{hlp.name, ui.KeyCtrlC, ui.ModNone, quit},
 	}
 
 	for _, k := range keys {
