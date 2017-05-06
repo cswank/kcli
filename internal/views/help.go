@@ -1,28 +1,34 @@
 package views
 
 import (
+	"bytes"
 	"fmt"
 
 	ui "github.com/jroimartin/gocui"
 )
 
 var (
-	helpMsg []byte
+	helpWidth  = 47
+	helpHeight = 15
+	helpMsg    []byte
 
-	tpl = `  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-  %-15s %62s
-                 note: C-f means Control f`
+	tpl = `%s            C-x means Control x`
+
+	helpMsgs = []keyHelp{
+		{key: "C-n", body: "(or down arrow) move cursor down"},
+		{key: "C-p", body: "(or up arrow) move cursor up"},
+		{key: "C-f", body: "(or right arrow) forward to next page"},
+		{key: "C-b", body: "(or left arrow) backward to prev page"},
+		{key: "enter", body: "view item at cursor"},
+		{key: "esc", body: "back to previous view"},
+		{key: "d", body: "dump to stdout"},
+		{key: "j", body: "jump to a kafka offset"},
+		{key: "s", body: "(or /) search kafka messages"},
+		{key: "f", body: "filter kafka messages"},
+		{key: "F", body: "clear filter"},
+		{key: "h", body: "toggle help"},
+		{key: "q", body: "quit"},
+	}
 )
 
 type help struct {
@@ -38,12 +44,10 @@ func newHelp(w, h int) *help {
 
 func getHelpCoords(g *ui.Gui) coords {
 	maxX, maxY := g.Size()
-	width := 62
-	height := 15
-	x1 := maxX/2 - width/2
-	x2 := maxX/2 + width/2
-	y1 := maxY/2 - height/2
-	y2 := maxY/2 + height/2 + height%2
+	x1 := maxX/2 - helpWidth/2
+	x2 := maxX/2 + helpWidth/2
+	y1 := maxY/2 - helpHeight/2
+	y2 := maxY/2 + helpHeight/2 + helpHeight%2
 	return coords{x1: x1, y1: y1, x2: x2, y2: y2}
 }
 
@@ -81,34 +85,15 @@ func (h *help) hide(g *ui.Gui, v *ui.View) error {
 	return err
 }
 
+type keyHelp struct {
+	key  string
+	body string
+}
+
 func getHelpMsg() []byte {
-	return []byte(fmt.Sprintf(
-		tpl,
-		c3("C-n"),
-		c1("(or down arrow) move cursor down"),
-		c3("C-p"),
-		c1("(or up arrow) move cursor up"),
-		c3("C-f"),
-		c1("(or right arrow) forward to next page"),
-		c3("C-b"),
-		c1("(or left arrow) backward to prev page"),
-		c3("enter"),
-		c1("view item at cursor"),
-		c3("esc"),
-		c1("back to previous view"),
-		c3("d"),
-		c1("consume kafka from cursor to end and write to stdout"),
-		c3("j"),
-		c1("jump to a kafka offset"),
-		c3("s"),
-		c1("(or /) search kafka messages"),
-		c3("f"),
-		c1("filter kafka messages"),
-		c3("F"),
-		c1("clear filter"),
-		c3("h"),
-		c1("toggle help"),
-		c3("q"),
-		c1("quit"),
-	))
+	out := &bytes.Buffer{}
+	for _, msg := range helpMsgs {
+		fmt.Fprintf(out, fmt.Sprintf("%s %s\n", c3(msg.key), c1(fmt.Sprintf(fmt.Sprintf("%%%ds", helpWidth-len(msg.key)-4), msg.body))))
+	}
+	return []byte(fmt.Sprintf(tpl, out.String()))
 }

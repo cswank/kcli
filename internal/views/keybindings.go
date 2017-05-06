@@ -35,6 +35,7 @@ func Keybindings(g *ui.Gui) error {
 		{bod.name, 'h', ui.ModNone, hlp.show},
 		{hlp.name, 'h', ui.ModNone, hlp.hide},
 		{bod.name, 'q', ui.ModNone, quit},
+		{hlp.name, 'q', ui.ModNone, quit},
 		{bod.name, ui.KeyCtrlC, ui.ModNone, quit},
 	}
 
