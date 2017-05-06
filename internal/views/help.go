@@ -10,25 +10,8 @@ import (
 var (
 	helpWidth  = 47
 	helpHeight = 15
+	tpl        = `%s             C-x means Control x`
 	helpMsg    []byte
-
-	tpl = `%s             C-x means Control x`
-
-	helpMsgs = []keyHelp{
-		{key: "C-n", body: "(or down arrow) move cursor down"},
-		{key: "C-p", body: "(or up arrow) move cursor up"},
-		{key: "C-f", body: "(or right arrow) forward to next page"},
-		{key: "C-b", body: "(or left arrow) backward to prev page"},
-		{key: "enter", body: "view item at cursor"},
-		{key: "esc", body: "back to previous view"},
-		{key: "d", body: "dump to stdout"},
-		{key: "j", body: "jump to a kafka offset"},
-		{key: "s", body: "(or /) search kafka messages"},
-		{key: "f", body: "filter kafka messages"},
-		{key: "F", body: "clear filter"},
-		{key: "h", body: "toggle help"},
-		{key: "q", body: "(or C-c) quit"},
-	}
 )
 
 type help struct {
@@ -85,15 +68,13 @@ func (h *help) hide(g *ui.Gui, v *ui.View) error {
 	return err
 }
 
-type keyHelp struct {
-	key  string
-	body string
-}
-
 func getHelpMsg() []byte {
 	out := &bytes.Buffer{}
-	for _, msg := range helpMsgs {
-		fmt.Fprintf(out, fmt.Sprintf("%s %s\n", c3(msg.key), c1(fmt.Sprintf(fmt.Sprintf("%%%ds", helpWidth-len(msg.key)-4), msg.body))))
+	for _, key := range keys {
+		h := key.help
+		if h.key != "" {
+			fmt.Fprintf(out, fmt.Sprintf("%s %s\n", c3(h.key), c1(fmt.Sprintf(fmt.Sprintf("%%%ds", helpWidth-len(h.key)-4), h.body))))
+		}
 	}
 	return []byte(fmt.Sprintf(tpl, out.String()))
 }

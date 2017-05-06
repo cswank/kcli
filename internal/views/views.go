@@ -32,7 +32,6 @@ var (
 func init() {
 	msgs = make(chan string)
 	c1, c2, c3 = getColors()
-	helpMsg = getHelpMsg()
 }
 
 type coords struct {
@@ -51,6 +50,9 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 	bod = newBody(width, height)
 	foot = newFooter(width, height)
 	hlp = newHelp(width, height)
+
+	keys = getKeys()
+	helpMsg = getHelpMsg()
 
 	ui.DefaultEditor = foot
 
