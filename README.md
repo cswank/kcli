@@ -21,7 +21,7 @@ is not tested).  If you have go installed you can do:
 
 Once you start kcli type 'h' to see the help menu:
 
-<img src="./docs/help.png" width="620"/>
+<img src="./docs/help.png" width="396"/>
 
 If you don't like the colors you can set KCLI_COLOR[1,2,3] to one of:
 
