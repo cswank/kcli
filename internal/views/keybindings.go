@@ -41,7 +41,7 @@ func getKeys() []key {
 		{views: []string{foot.name}, keys: []interface{}{ui.KeyEsc}, keybinding: foot.bail},
 		{views: []string{bod.name}, keys: []interface{}{'h'}, keybinding: hlp.show, help: keyHelp{key: "h", body: "toggle help"}},
 		{views: []string{hlp.name}, keys: []interface{}{'h'}, keybinding: hlp.hide},
-		{views: []string{bod.name, hlp.name}, keys: []interface{}{ui.KeyCtrlQ, ui.KeyCtrlD}, keybinding: quit, help: keyHelp{key: "C-q", body: "(or C-d) quit"}},
+		{views: []string{bod.name, hlp.name}, keys: []interface{}{ui.KeyCtrlQ}, keybinding: quit, help: keyHelp{key: "C-q", body: "quit"}},
 	}
 }
 
