@@ -32,7 +32,7 @@ func getKeys() []key {
 		{views: []string{bod.name}, keys: []interface{}{'b', ui.KeyArrowLeft}, keybinding: back, help: keyHelp{key: "b", body: "(or left arrow) backward to prev page"}},
 		{views: []string{bod.name}, keys: []interface{}{ui.KeyEnter}, keybinding: sel, help: keyHelp{key: "enter", body: "view item at cursor"}},
 		{views: []string{bod.name}, keys: []interface{}{ui.KeyEsc}, keybinding: popPage, help: keyHelp{key: "esc", body: "back to previous view"}},
-		{views: []string{bod.name}, keys: []interface{}{ui.KeyCtrlD}, keybinding: dump, help: keyHelp{key: "C-d", body: "quit and dump to stdout"}},
+		{views: []string{bod.name}, keys: []interface{}{ui.KeyCtrlP}, keybinding: dump, help: keyHelp{key: "C-p", body: "quit and print to stdout"}},
 		{views: []string{bod.name}, keys: []interface{}{ui.KeyCtrlJ}, keybinding: jump, help: keyHelp{key: "C-j", body: "jump to a kafka offset"}},
 		{views: []string{bod.name}, keys: []interface{}{ui.KeyCtrlS, '/'}, keybinding: search, help: keyHelp{key: "C-s", body: "(or /) search kafka messages"}},
 		{views: []string{bod.name}, keys: []interface{}{ui.KeyCtrlF}, keybinding: filter, help: keyHelp{key: "C-f", body: "filter kafka messages"}},
@@ -41,7 +41,7 @@ func getKeys() []key {
 		{views: []string{foot.name}, keys: []interface{}{ui.KeyEsc}, keybinding: foot.bail},
 		{views: []string{bod.name}, keys: []interface{}{'h'}, keybinding: hlp.show, help: keyHelp{key: "h", body: "toggle help"}},
 		{views: []string{hlp.name}, keys: []interface{}{'h'}, keybinding: hlp.hide},
-		{views: []string{bod.name, hlp.name}, keys: []interface{}{ui.KeyCtrlQ}, keybinding: quit, help: keyHelp{key: "C-q", body: "quit"}},
+		{views: []string{bod.name, hlp.name}, keys: []interface{}{ui.KeyCtrlD}, keybinding: quit, help: keyHelp{key: "C-d", body: "quit"}},
 	}
 }
 
