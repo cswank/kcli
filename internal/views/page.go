@@ -146,7 +146,10 @@ func (p *pages) searchTopic(s string) error {
 		}
 	}
 
+	ch := make(chan bool)
+	go spinner(ch)
 	found, err := kafka.SearchTopic(partitions, s)
+	ch <- true
 	if err != nil {
 		return err
 	}

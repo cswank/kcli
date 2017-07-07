@@ -22,6 +22,7 @@ type key struct {
 
 var (
 	keys []key
+	gui  *ui.Gui
 )
 
 func getKeys() []key {
@@ -46,6 +47,7 @@ func getKeys() []key {
 }
 
 func Keybindings(g *ui.Gui) error {
+	gui = g
 	for _, k := range keys {
 		for _, view := range k.views {
 			for _, kb := range k.keys {

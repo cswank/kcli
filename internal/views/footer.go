@@ -86,6 +86,7 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 			return err
 		}
 	case "search":
+		f.locked = false
 		if err := pg.search(strings.TrimSpace(term)); err != nil {
 			return err
 		}

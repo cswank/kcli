@@ -106,8 +106,11 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 		v.Editable = true
 
 		_, err = g.SetCurrentView(currentView)
+		ch := make(chan bool)
+		go spinner(ch)
 		return err
 	}
+
 }
 
 func next(g *ui.Gui, v *ui.View) error {
@@ -288,6 +291,26 @@ func dump(g *ui.Gui, v *ui.View) error {
 
 func quit(g *ui.Gui, v *ui.View) error {
 	return ui.ErrQuit
+}
+
+func spinner(stop chan bool) {
+	writeMsg(gui, "")
+	chars = `|/-\|-/-`
+	l := len(chars)
+	var i int
+	for {
+		select {
+		case <-time.After(time.Duration(1) * time.Second):
+			writeMsg(gui, string(chars[i]))
+			i++
+			if i == l {
+				i = 0
+			}
+		case <-stop:
+			writeMsg(gui, "")
+			return
+		}
+	}
 }
 
 func flashMessage(g *ui.Gui) {
