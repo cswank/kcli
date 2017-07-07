@@ -4,12 +4,17 @@ import (
 	"bufio"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
 
 	"github.com/cswank/kcli/internal/colors"
 	"github.com/cswank/kcli/internal/kafka"
+)
+
+var (
+	errNoContent = errors.New("no content")
 )
 
 //getTopics -> getTopic -> getPartition -> getMessage
@@ -69,6 +74,10 @@ func getPartition(size int, i interface{}) (page, error) {
 	partition, ok := i.(kafka.Partition)
 	if !ok {
 		return page{}, fmt.Errorf("getPartition could not accept arg: %v", i)
+	}
+
+	if partition.End == 0 {
+		return page{}, errNoContent
 	}
 
 	var f func([]byte) bool

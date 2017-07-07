@@ -154,6 +154,11 @@ func sel(g *ui.Gui, v *ui.View) error {
 	}
 
 	n, err := p.next(size, r.args)
+	if err == errNoContent {
+		msgs <- "nothing to see here"
+		return nil
+	}
+
 	if err != nil {
 		return err
 	}
