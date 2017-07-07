@@ -124,15 +124,50 @@ func (p *pages) filter(s string) error {
 }
 
 func (p *pages) search(s string) error {
-	row := p.currentRow()
-	msg := row.args.(kafka.Msg)
+	r := p.currentRow()
+	msg, ok := r.args.(kafka.Msg)
+	if ok {
+		return p.searchPartition(s, msg)
+	}
 
+	return p.searchTopic(s)
+}
+
+func (p *pages) searchTopic(s string) error {
+	rows, _ := p.body()
+	var partitions []kafka.Partition
+	for _, r := range rows {
+		partitions = append(partitions, r.args.(kafka.Partition))
+	}
+
+	found, err := kafka.SearchTopic(partitions, s)
+	if err != nil {
+		return err
+	}
+
+	if len(found) == 0 {
+		msgs <- "not found"
+		return nil
+	}
+
+	pg := page{
+		name:   "topic",
+		header: c1("partition     1st offset             last offset            size"),
+		body:   getTopicRows(20, found),
+		next:   getPartition,
+		search: s,
+	}
+	p.pop()
+	p.add(pg)
+	return nil
+}
+
+func (p *pages) searchPartition(s string, msg kafka.Msg) error {
 	if s == "" {
 		s = p.current().search
 		if s == "" {
 			return nil
 		}
-
 		//using the previous search term, moving one offset
 		//forward to skip the previous search result
 		msg.Partition.Offset++

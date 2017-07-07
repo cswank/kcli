@@ -163,6 +163,7 @@ func sel(g *ui.Gui, v *ui.View) error {
 		return nil
 	}
 
+	n.search = p.search
 	pg.add(n)
 	return v.SetCursor(0, 0)
 }
@@ -222,8 +223,8 @@ func filter(g *ui.Gui, v *ui.View) error {
 
 func search(g *ui.Gui, v *ui.View) error {
 	p := pg.current()
-	if p.name != "partition" {
-		msgs <- "you can only search a partition"
+	if p.name != "partition" && p.name != "topic" {
+		msgs <- "you can only search a partition or a topic"
 		return nil
 	}
 

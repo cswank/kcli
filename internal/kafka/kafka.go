@@ -3,6 +3,7 @@ package kafka
 import (
 	"encoding/json"
 	"log"
+	"sort"
 	"strings"
 	"time"
 
@@ -126,6 +127,40 @@ func Close() {
 	if cli != nil {
 		cli.Close()
 	}
+}
+
+type searchResult struct {
+	partition Partition
+	offset    int64
+	error     error
+}
+
+func SearchTopic(partitions []Partition, s string) ([]Partition, error) {
+	ch := make(chan searchResult)
+	for _, p := range partitions {
+		go func(partition Partition, ch chan searchResult) {
+			i, err := Search(partition, s)
+			ch <- searchResult{partition: partition, offset: i, error: err}
+		}(p, ch)
+	}
+
+	var results []Partition
+	for i := 0; i < len(partitions); i++ {
+		r := <-ch
+		if r.error != nil {
+			return nil, r.error
+		}
+		if r.offset > -1 {
+			r.partition.Offset = r.offset
+			results = append(results, r.partition)
+		}
+	}
+
+	sort.Slice(results, func(i, j int) bool {
+		return results[j].Partition >= results[i].Partition
+	})
+
+	return results, nil
 }
 
 func Search(info Partition, s string) (int64, error) {
