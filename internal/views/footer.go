@@ -17,6 +17,7 @@ type footer struct {
 	name     string
 	coords   coords
 	function string
+	locked   bool
 }
 
 func newFooter(w, h int) *footer {
@@ -60,6 +61,10 @@ func (f *footer) bail(g *ui.Gui, v *ui.View) error {
 }
 
 func (f *footer) exit(g *ui.Gui, v *ui.View) error {
+	defer func() {
+		f.locked = false
+	}()
+
 	s := v.Buffer()
 	i := strings.Index(s, ":")
 	if i == -1 {

@@ -243,6 +243,7 @@ func search(g *ui.Gui, v *ui.View) error {
 	v.Clear()
 	v.Write([]byte("search: "))
 	foot.function = "search"
+	foot.locked = true
 	return v.SetCursor(8, 0)
 }
 
@@ -304,6 +305,10 @@ func flashMessage(g *ui.Gui) {
 }
 
 func writeMsg(g *ui.Gui, msg string) {
+	if foot.locked {
+		return
+	}
+
 	g.Execute(func(g *ui.Gui) error {
 		v, _ := g.View("footer")
 		v.Clear()
