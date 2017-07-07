@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,_ +/()*&^%$#@!"
+	chars = ` abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,_ +/()*&^%$#@!:"`
 	nums  = "1234567890"
 )
 
@@ -31,14 +31,18 @@ func (f *footer) resize(w, h int) {
 }
 
 func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
+	in := string(ch)
+	if key == ui.KeySpace {
+		in = " "
+	}
 	s := strings.TrimSpace(v.Buffer())
 	if key == 127 && len(s) > 0 {
 		v.Clear()
 		s = s[:len(s)-1]
 		v.Write([]byte(s))
 		v.SetCursor(len(s), 0)
-	} else if f.acceptable(string(ch)) {
-		fmt.Fprint(v, string(ch))
+	} else if f.acceptable(in) {
+		fmt.Fprint(v, in)
 		s = v.Buffer()
 		v.SetCursor(len(s)-1, 0)
 	}
@@ -57,14 +61,14 @@ func (f *footer) bail(g *ui.Gui, v *ui.View) error {
 
 func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 	s := v.Buffer()
-	parts := strings.Split(s, ":")
-	if len(parts) != 2 {
+	i := strings.Index(s, ":")
+	if i == -1 {
 		return nil
 	}
-
+	term := s[i+1:]
 	switch f.function {
 	case "jump":
-		n, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+		n, err := strconv.ParseInt(strings.TrimSpace(term), 10, 64)
 		if err != nil {
 			return err
 		}
@@ -77,11 +81,11 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 			return err
 		}
 	case "search":
-		if err := pg.search(strings.TrimSpace(parts[1])); err != nil {
+		if err := pg.search(strings.TrimSpace(term)); err != nil {
 			return err
 		}
 	case "filter":
-		if err := pg.filter(strings.TrimSpace(parts[1])); err != nil {
+		if err := pg.filter(strings.TrimSpace(term)); err != nil {
 			return err
 		}
 	}
