@@ -134,10 +134,16 @@ func (p *pages) search(s string) error {
 }
 
 func (p *pages) searchTopic(s string) error {
-	rows, _ := p.body()
+	pg := p.current()
 	var partitions []kafka.Partition
-	for _, r := range rows {
-		partitions = append(partitions, r.args.(kafka.Partition))
+	var size int
+	for i, rows := range pg.body {
+		if i == 0 {
+			size = len(rows)
+		}
+		for _, r := range rows {
+			partitions = append(partitions, r.args.(kafka.Partition))
+		}
 	}
 
 	found, err := kafka.SearchTopic(partitions, s)
@@ -150,15 +156,15 @@ func (p *pages) searchTopic(s string) error {
 		return nil
 	}
 
-	pg := page{
+	newPg := page{
 		name:   "topic",
 		header: c1("partition     1st offset             last offset            size"),
-		body:   getTopicRows(20, found),
+		body:   getTopicRows(size, found),
 		next:   getPartition,
 		search: s,
 	}
 	p.pop()
-	p.add(pg)
+	p.add(newPg)
 	return nil
 }
 
