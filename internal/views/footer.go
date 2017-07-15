@@ -37,7 +37,7 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 		in = " "
 	}
 	s := strings.TrimSpace(v.Buffer())
-	if key == 127 && len(s) > 0 {
+	if key == 127 && len(s) > 0+len(f.function)+2 {
 		v.Clear()
 		s = s[:len(s)-1]
 		v.Write([]byte(s))
@@ -52,6 +52,7 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 func (f *footer) bail(g *ui.Gui, v *ui.View) error {
 	currentView = bod.name
 	v.Clear()
+
 	var err error
 	v, err = g.SetCurrentView(bod.name)
 	if err != nil {
@@ -86,9 +87,13 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 			return err
 		}
 	case "search":
-		if err := pg.search(strings.TrimSpace(term)); err != nil {
-			return err
-		}
+		keyLock = true
+		v.Clear()
+		v.Write([]byte("searching..."))
+		searchTrigger <- strings.TrimSpace(term)
+		currentView = bod.name
+		_, err := g.SetCurrentView(bod.name)
+		return err
 	case "filter":
 		if err := pg.filter(strings.TrimSpace(term)); err != nil {
 			return err

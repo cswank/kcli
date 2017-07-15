@@ -14,10 +14,11 @@ import (
 var (
 	pg pages
 
-	head *header
-	bod  *body
-	foot *footer
-	hlp  *help
+	head    *header
+	bod     *body
+	foot    *footer
+	hlp     *help
+	keyLock bool
 
 	currentView string
 
@@ -26,11 +27,14 @@ var (
 	//After gets called by main when the gui is closed (if it's not nil)
 	After func()
 
-	msgs chan string
+	msgs          chan string
+	searchTrigger chan string
 )
 
 func init() {
 	msgs = make(chan string)
+
+	searchTrigger = make(chan string)
 	c1, c2, c3 = getColors()
 }
 
@@ -43,6 +47,15 @@ type coords struct {
 
 type View interface {
 	Render(g *ui.Gui, v *ui.View) error
+}
+
+func viewLocked(f func(*ui.Gui, *ui.View) error) func(*ui.Gui, *ui.View) error {
+	return func(g *ui.Gui, v *ui.View) error {
+		if keyLock {
+			return nil
+		}
+		return f(g, v)
+	}
 }
 
 func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
@@ -68,6 +81,7 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 	}
 
 	go flashMessage(g)
+	go doSearch(g)
 
 	return func(g *ui.Gui) error {
 		w, h := g.Size()
@@ -301,6 +315,24 @@ func flashMessage(g *ui.Gui) {
 			dur = time.Second * 100000
 			writeMsg(g, "")
 		}
+	}
+}
+
+func doSearch(g *ui.Gui) {
+	for {
+		term := <-searchTrigger
+
+		if err := pg.search(term); err != nil {
+			log.Println(err)
+		}
+
+		g.Execute(func(g *ui.Gui) error {
+			v, _ := g.View("footer")
+			v.Clear()
+			fmt.Fprint(v, "")
+			return nil
+		})
+		keyLock = false
 	}
 }
 
