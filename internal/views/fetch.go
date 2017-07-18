@@ -65,7 +65,7 @@ func getTopicRows(size int, partitions []kafka.Partition) [][]row {
 	r := make([]row, len(partitions))
 	tpl := colors.Green("%-13d %-22d %-22d %d")
 	for i, p := range partitions {
-		r[i] = row{args: p, value: fmt.Sprintf(tpl, p.Partition, p.Start, p.End, p.End-p.Start)}
+		r[i] = row{args: p, value: fmt.Sprintf(tpl, p.Partition, p.Start, p.End, p.End-p.Start), truncate: true}
 	}
 	return split(r, size)
 }
@@ -142,8 +142,9 @@ func getMsgsRows(msgs []kafka.Msg) []row {
 	r := make([]row, len(msgs))
 	for i, m := range msgs {
 		r[i] = row{
-			args:  m,
-			value: fmt.Sprintf("%-12d %s", m.Partition.Offset, string(m.Value)),
+			truncate: true,
+			args:     m,
+			value:    fmt.Sprintf("%-12d %s", m.Partition.Offset, string(m.Value)),
 		}
 	}
 
@@ -164,7 +165,7 @@ func getMessage(size int, i interface{}) (page, error) {
 	var out []row
 	scanner := bufio.NewScanner(buf)
 	for scanner.Scan() {
-		out = append(out, row{value: scanner.Text()})
+		out = append(out, row{value: scanner.Text(), truncate: false})
 	}
 
 	return page{

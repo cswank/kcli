@@ -25,7 +25,7 @@ func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
 	body, page := pg.body()
 	for _, r := range body {
-		_, err := v.Write(append([]byte(b.color(r.value, page.search)), []byte("\n")...))
+		_, err := v.Write(append([]byte(b.color(r.value, page.search, r.truncate)), []byte("\n")...))
 		if err != nil {
 			return err
 		}
@@ -33,8 +33,8 @@ func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	return nil
 }
 
-func (b *body) color(val, search string) string {
-	if search == "" {
+func (b *body) color(val, search string, truncate bool) string {
+	if search == "" || !truncate {
 		return c2(val)
 	}
 	i := strings.Index(val, search)

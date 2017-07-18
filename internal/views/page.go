@@ -37,8 +37,9 @@ type pages struct {
 }
 
 type row struct {
-	args  interface{}
-	value string
+	truncate bool
+	args     interface{}
+	value    string
 }
 
 func (p *pages) resize(s int) {
