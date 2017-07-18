@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"math/rand"
+	"time"
 
 	"github.com/Shopify/sarama"
 )
@@ -16,10 +17,12 @@ var (
 		"stuff":   `{"first_name": "%s", "last_name": "%s", "age": %d}`,
 		"things":  `first_name: %s, last_name: %s, age: %d`,
 		"whatnot": `{"first_name": "%s", "last_name": "%s", "age": %d}`,
+		"items":   `%s,%s,%d`,
 	}
 )
 
 func main() {
+	rand.Seed(time.Now().UnixNano())
 	config := sarama.NewConfig()
 	config.Producer.RequiredAcks = sarama.WaitForAll
 	config.Producer.Retry.Max = 5
