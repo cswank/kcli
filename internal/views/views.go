@@ -309,7 +309,7 @@ func flashMessage(g *ui.Gui) {
 	for {
 		select {
 		case m := <-msgs:
-			dur = time.Second * 2
+			dur = time.Second * 3
 			writeMsg(g, m)
 		case <-time.After(dur):
 			dur = time.Second * 100000
@@ -322,23 +322,25 @@ func doSearch(g *ui.Gui) {
 	for {
 		term := <-searchTrigger
 
-		if err := pg.search(term, func(a, b int) {
+		var end int
+		n, err := pg.search(term, func(a, b int) {
+			end = b
 			g.Execute(func(g *ui.Gui) error {
 				v, _ := g.View("footer")
 				v.Clear()
 				fmt.Fprintf(v, strings.Repeat("|", foot.width*a/b))
 				return nil
 			})
-		}); err != nil {
+		})
+		if err != nil {
 			log.Println(err)
 		}
 
-		g.Execute(func(g *ui.Gui) error {
-			v, _ := g.View("footer")
-			v.Clear()
-			fmt.Fprint(v, "")
-			return nil
-		})
+		if end > 0 {
+			msgs <- fmt.Sprintf("%d of %d partitions matched %s", n, end, term)
+		} else {
+			msgs <- ""
+		}
 		keyLock = false
 	}
 }

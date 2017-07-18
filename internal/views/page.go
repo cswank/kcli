@@ -123,17 +123,17 @@ func (p *pages) filter(s string) error {
 	return p.jump(msg.Offset, s)
 }
 
-func (p *pages) search(s string, cb func(int, int)) error {
+func (p *pages) search(s string, cb func(int, int)) (int, error) {
 	r := p.currentRow()
 	msg, ok := r.args.(kafka.Msg)
 	if ok {
-		return p.searchPartition(s, msg, cb)
+		return -1, p.searchPartition(s, msg, cb)
 	}
 
 	return p.searchTopic(s, cb)
 }
 
-func (p *pages) searchTopic(s string, cb func(int, int)) error {
+func (p *pages) searchTopic(s string, cb func(int, int)) (int, error) {
 	pg := p.current()
 	var partitions []kafka.Partition
 	var size int
@@ -148,12 +148,12 @@ func (p *pages) searchTopic(s string, cb func(int, int)) error {
 
 	found, err := kafka.SearchTopic(partitions, s, cb)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	if len(found) == 0 {
 		msgs <- "not found"
-		return nil
+		return 0, nil
 	}
 
 	newPg := page{
@@ -165,7 +165,7 @@ func (p *pages) searchTopic(s string, cb func(int, int)) error {
 	}
 	p.pop()
 	p.add(newPg)
-	return nil
+	return len(found), nil
 }
 
 func (p *pages) searchPartition(s string, msg kafka.Msg, cb func(int, int)) error {
