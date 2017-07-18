@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"encoding/json"
-	"log"
 	"sort"
 	"strings"
 	"time"
@@ -36,15 +35,16 @@ type Msg struct {
 	Offset    int64     `json:"offset"`
 }
 
-func Connect(a []string) {
+func Connect(a []string) error {
 	addrs = a
 	var err error
 	cli, err = sarama.NewClient(addrs, nil)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	GetTopics = cli.Topics
+	return nil
 }
 
 func GetTopic(topic string) ([]Partition, error) {

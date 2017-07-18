@@ -23,6 +23,10 @@ var (
 func init() {
 	kingpin.Parse()
 
+	if err := kafka.Connect(*addrs); err != nil {
+		log.Fatal(err)
+	}
+
 	if *logout != "" {
 		var err error
 		f, err = os.Create(*logout)
@@ -32,10 +36,6 @@ func init() {
 		log.SetOutput(f)
 	} else {
 		log.SetOutput(ioutil.Discard)
-	}
-
-	if os.Getenv("KCLI_FAKE") != "true" {
-		kafka.Connect(*addrs)
 	}
 }
 
@@ -70,6 +70,7 @@ func main() {
 
 	if err := g.MainLoop(); err != nil {
 		if err != ui.ErrQuit {
+			log.SetOutput(os.Stderr)
 			log.Println(err)
 			return
 		}
