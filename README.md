@@ -42,5 +42,14 @@ See it in action at [asciinema](https://asciinema.org/a/7wobtflusydvswbsn1d320o1
 
 [![asciicast](https://asciinema.org/a/7wobtflusydvswbsn1d320o1g.png)](https://asciinema.org/a/7wobtflusydvswbsn1d320o1g)
 
+NOTE: If you are connecting to a local kafka that is running in a docker container
+using wurstmeister/kafka you may have the env KAFKA_ADVERTISED_HOST_NAME set to
+a name that is used by other containers that need to connect to kafka.  This will
+cause kcli to not be able to read from kafka.  A hacky fix is to edit your /etc/hosts
+file and add another name to the 127.0.0.1 network interface.  For example, if
 
+    KAFKA_ADVERTISED_HOST_NAME=kafka
 
+Then the 127.0.0.1 line /etc/hosts should look like:
+
+    127.0.0.1       localhost kafka
