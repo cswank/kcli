@@ -322,7 +322,14 @@ func doSearch(g *ui.Gui) {
 	for {
 		term := <-searchTrigger
 
-		if err := pg.search(term); err != nil {
+		if err := pg.search(term, func(a, b int) {
+			g.Execute(func(g *ui.Gui) error {
+				v, _ := g.View("footer")
+				v.Clear()
+				fmt.Fprintf(v, strings.Repeat("|", foot.width*a/b))
+				return nil
+			})
+		}); err != nil {
 			log.Println(err)
 		}
 

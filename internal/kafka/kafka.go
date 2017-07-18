@@ -135,8 +135,9 @@ type searchResult struct {
 	error     error
 }
 
-func SearchTopic(partitions []Partition, s string) ([]Partition, error) {
+func SearchTopic(partitions []Partition, s string, cb func(int, int)) ([]Partition, error) {
 	ch := make(chan searchResult)
+	n := len(partitions)
 	for _, p := range partitions {
 		go func(partition Partition, ch chan searchResult) {
 			i, err := Search(partition, s)
@@ -147,6 +148,7 @@ func SearchTopic(partitions []Partition, s string) ([]Partition, error) {
 	var results []Partition
 	for i := 0; i < len(partitions); i++ {
 		r := <-ch
+		cb(i, n)
 		if r.error != nil {
 			return nil, r.error
 		}

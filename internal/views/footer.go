@@ -18,12 +18,14 @@ type footer struct {
 	coords   coords
 	function string
 	locked   bool
+	width    int
 }
 
 func newFooter(w, h int) *footer {
 	return &footer{
 		name:   "footer",
 		coords: coords{x1: -1, y1: h - 2, x2: w, y2: h},
+		width:  w,
 	}
 }
 
