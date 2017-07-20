@@ -23,7 +23,7 @@ func newSearchDialog(w, h int) *searchDialog {
 }
 
 func getSearchCoords(w, h int) coords {
-	return coords{x1: -1, y1: h - 5, x2: w, y2: h - 2}
+	return coords{x1: -1, y1: h - 3, x2: w, y2: h}
 }
 
 func (s *searchDialog) resize(w, h int) {
