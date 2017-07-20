@@ -18,6 +18,7 @@ var (
 	bod     *body
 	foot    *footer
 	hlp     *help
+	searchD *searchDialog
 	keyLock bool
 
 	currentView string
@@ -28,14 +29,19 @@ var (
 	After func()
 
 	msgs          chan string
-	searchTrigger chan string
+	searchTrigger chan searchItem
 )
 
 func init() {
 	msgs = make(chan string)
 
-	searchTrigger = make(chan string)
+	searchTrigger = make(chan searchItem)
 	c1, c2, c3 = getColors()
+}
+
+type searchItem struct {
+	firstResult bool
+	term        string
 }
 
 type coords struct {
@@ -63,6 +69,7 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 	bod = newBody(width, height)
 	foot = newFooter(width, height)
 	hlp = newHelp(width, height)
+	searchD = newSearchDialog(width, height)
 
 	keys = getKeys()
 	helpMsg = getHelpMsg()
@@ -110,6 +117,18 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 
 		if err := bod.Render(g, v); err != nil {
 			return err
+		}
+
+		if searchD.visible {
+			v, err = g.SetView(searchD.name, searchD.coords.x1, searchD.coords.y1, searchD.coords.x2, searchD.coords.y2)
+			if err != nil && err != ui.ErrUnknownView {
+				return err
+			}
+
+			v.Frame = false
+			if err := searchD.Render(g, v); err != nil {
+				return err
+			}
 		}
 
 		v, err = g.SetView(foot.name, foot.coords.x1, foot.coords.y1, foot.coords.x2, foot.coords.y2)
@@ -320,10 +339,10 @@ func flashMessage(g *ui.Gui) {
 
 func doSearch(g *ui.Gui) {
 	for {
-		term := <-searchTrigger
+		item := <-searchTrigger
 
 		var end int
-		n, err := pg.search(term, func(a, b int) {
+		n, err := pg.search(item.term, item.firstResult, func(a, b int) {
 			end = b
 			g.Execute(func(g *ui.Gui) error {
 				v, _ := g.View("footer")
@@ -337,7 +356,7 @@ func doSearch(g *ui.Gui) {
 		}
 
 		if end > 0 {
-			msgs <- fmt.Sprintf("%d of %d partitions matched %s", n, end, term)
+			msgs <- fmt.Sprintf("%d of %d partitions matched %s", n, end, item.term)
 		} else {
 			msgs <- ""
 		}

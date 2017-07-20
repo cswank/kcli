@@ -135,17 +135,28 @@ type searchResult struct {
 	error     error
 }
 
-func SearchTopic(partitions []Partition, s string, cb func(int, int)) ([]Partition, error) {
+func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int, int)) ([]Partition, error) {
 	ch := make(chan searchResult)
 	n := len(partitions)
+	var stop bool
+	f := func() bool {
+		return stop
+	}
+
 	for _, p := range partitions {
 		go func(partition Partition, ch chan searchResult) {
-			i, err := Search(partition, s)
+			i, err := Search(partition, s, f)
 			ch <- searchResult{partition: partition, offset: i, error: err}
 		}(p, ch)
 	}
 
 	var results []Partition
+
+	nResults := len(partitions)
+	if firstResult {
+		nResults = 1
+	}
+
 	for i := 0; i < len(partitions); i++ {
 		r := <-ch
 		cb(i, n)
@@ -156,6 +167,11 @@ func SearchTopic(partitions []Partition, s string, cb func(int, int)) ([]Partiti
 			r.partition.Offset = r.offset
 			results = append(results, r.partition)
 		}
+		if len(results) == nResults {
+			stop = true
+			break
+		}
+
 	}
 
 	sort.Slice(results, func(i, j int) bool {
@@ -165,7 +181,7 @@ func SearchTopic(partitions []Partition, s string, cb func(int, int)) ([]Partiti
 	return results, nil
 }
 
-func Search(info Partition, s string) (int64, error) {
+func Search(info Partition, s string, stop func() bool) (int64, error) {
 	n := int64(-1)
 	var i int64
 	err := consume(info, info.End, func(msg string) bool {
@@ -174,7 +190,7 @@ func Search(info Partition, s string) (int64, error) {
 			return true
 		}
 		i++
-		return false
+		return stop()
 	})
 
 	return n, err

@@ -42,6 +42,9 @@ func getKeys() []key {
 		{views: []string{bod.name}, keys: []interface{}{'h'}, keybinding: viewLocked(hlp.show), help: keyHelp{key: "h", body: "toggle help"}},
 		{views: []string{hlp.name}, keys: []interface{}{'h'}, keybinding: viewLocked(hlp.hide)},
 		{views: []string{bod.name, hlp.name}, keys: []interface{}{ui.KeyCtrlD}, keybinding: viewLocked(quit), help: keyHelp{key: "C-d", body: "quit"}},
+
+		{views: []string{searchD.name}, keys: []interface{}{ui.KeyCtrlS}, keybinding: searchD.firstResult},
+		{views: []string{searchD.name}, keys: []interface{}{'s'}, keybinding: searchD.search},
 	}
 }
 

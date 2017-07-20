@@ -91,11 +91,7 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 	case "search":
 		keyLock = true
 		v.Clear()
-		v.Write([]byte("searching..."))
-		searchTrigger <- strings.TrimSpace(term)
-		currentView = bod.name
-		_, err := g.SetCurrentView(bod.name)
-		return err
+		return searchD.show(g, term)
 	case "filter":
 		if err := pg.filter(strings.TrimSpace(term)); err != nil {
 			return err
