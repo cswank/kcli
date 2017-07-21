@@ -69,7 +69,8 @@ func (s *searchDialog) search(g *ui.Gui, v *ui.View) error {
 	}
 
 	currentView = bod.name
-	_, err := g.SetCurrentView(bod.name)
+	vb, err := g.SetCurrentView(bod.name)
+	vb.SetCursor(0, 0)
 	searchTrigger <- searchItem{term: strings.TrimSpace(s.term), firstResult: s.stopAtFirst}
 	return err
 }
