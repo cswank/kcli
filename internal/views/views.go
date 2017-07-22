@@ -213,8 +213,8 @@ func popPage(g *ui.Gui, v *ui.View) error {
 
 func jump(g *ui.Gui, v *ui.View) error {
 	p := pg.current()
-	if p.name != "partition" {
-		msgs <- "you can only jump within a partition"
+	if !(p.name == "partition" || p.name == "topic") {
+		msgs <- "you can only jump within a partition or topic"
 		return nil
 	}
 

@@ -55,7 +55,7 @@ func getTopic(size int, i interface{}) (page, error) {
 
 	return page{
 		name:   "topic",
-		header: c1("partition     1st offset             last offset            size"),
+		header: c1("partition     1st offset             current offset         last offset            size"),
 		body:   getTopicRows(size, partitions),
 		next:   getPartition,
 	}, nil
@@ -63,9 +63,9 @@ func getTopic(size int, i interface{}) (page, error) {
 
 func getTopicRows(size int, partitions []kafka.Partition) [][]row {
 	r := make([]row, len(partitions))
-	tpl := colors.Green("%-13d %-22d %-22d %d")
+	tpl := colors.Green("%-13d %-22d %-22d %-22d %d")
 	for i, p := range partitions {
-		r[i] = row{args: p, value: fmt.Sprintf(tpl, p.Partition, p.Start, p.End, p.End-p.Start), truncate: true}
+		r[i] = row{args: p, value: fmt.Sprintf(tpl, p.Partition, p.Start, p.Offset, p.End, p.End-p.Start), truncate: true}
 	}
 	return split(r, size)
 }

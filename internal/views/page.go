@@ -159,7 +159,7 @@ func (p *pages) searchTopic(s string, firstResult bool, cb func(int, int)) (int,
 
 	newPg := page{
 		name:   "topic",
-		header: c1("partition     1st offset             last offset            size"),
+		header: c1("partition     1st offset             current offset         last offset            size"),
 		body:   getTopicRows(size, found),
 		next:   getPartition,
 		search: s,
@@ -197,7 +197,44 @@ func (p *pages) jump(n int64, s string) error {
 	page := pg.pop()
 	f := page.filter
 	row := page.body[0][0]
-	msg := row.args.(kafka.Msg)
+	msg, ok := row.args.(kafka.Msg)
+	if ok {
+		return p.jumpPartition(msg, page, n, s, f)
+	}
+	return p.jumpTopic(page, n, s, f)
+}
+
+func (p *pages) jumpTopic(page page, n int64, s string, f bool) error {
+	var rows []row
+	for _, r := range page.body {
+		rows = append(rows, r...)
+	}
+
+	var parts []kafka.Partition
+	for _, r := range rows {
+		part := r.args.(kafka.Partition)
+		if n > 0 {
+			end := part.Offset + n
+			if end >= part.End {
+				end = part.End
+			}
+			part.Offset = end
+		} else {
+			end := part.End + n
+			if end <= part.Start {
+				end = part.Start
+			}
+			part.Offset = end
+		}
+		parts = append(parts, part)
+	}
+
+	page.body = getTopicRows(bod.size, parts)
+	p.add(page)
+	return nil
+}
+
+func (p *pages) jumpPartition(msg kafka.Msg, page page, n int64, s string, f bool) error {
 	part := msg.Partition
 	if page.filter {
 		part.Filter = page.search

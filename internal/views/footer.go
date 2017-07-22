@@ -119,5 +119,9 @@ func (f *footer) isChar(s string) bool {
 }
 
 func (f *footer) isNum(s string) bool {
-	return strings.Contains(nums, s)
+	x := nums
+	if pg.current().name == "topic" {
+		x += "-"
+	}
+	return strings.Contains(x, s)
 }
