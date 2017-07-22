@@ -216,7 +216,10 @@ func (p *pages) jumpTopic(page page, n int64, s string, f bool) error {
 		if n > 0 {
 			end := part.Offset + n
 			if end >= part.End {
-				end = part.End
+				end = part.End - 1
+				if end < 0 {
+					end = 0
+				}
 			}
 			part.Offset = end
 		} else {
