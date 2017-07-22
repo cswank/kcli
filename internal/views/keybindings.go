@@ -39,12 +39,16 @@ func getKeys() []key {
 		{views: []string{bod.name}, keys: []interface{}{'F'}, keybinding: viewLocked(clearFilter), help: keyHelp{key: "F", body: "clear filter"}},
 		{views: []string{foot.name}, keys: []interface{}{ui.KeyEnter}, keybinding: viewLocked(foot.exit)},
 		{views: []string{foot.name}, keys: []interface{}{ui.KeyEsc}, keybinding: viewLocked(foot.bail)},
-		{views: []string{bod.name}, keys: []interface{}{'h'}, keybinding: viewLocked(hlp.show), help: keyHelp{key: "h", body: "toggle help"}},
-		{views: []string{hlp.name}, keys: []interface{}{'h'}, keybinding: viewLocked(hlp.hide)},
 		{views: []string{bod.name, hlp.name}, keys: []interface{}{ui.KeyCtrlD}, keybinding: viewLocked(quit), help: keyHelp{key: "C-d", body: "quit"}},
 
+		//search dialog keys
 		{views: []string{searchD.name}, keys: []interface{}{ui.KeyCtrlS}, keybinding: searchD.firstResult},
 		{views: []string{searchD.name}, keys: []interface{}{'s'}, keybinding: searchD.search},
+
+		//help keys
+		{views: []string{bod.name}, keys: []interface{}{'h'}, keybinding: viewLocked(hlp.show), help: keyHelp{key: "h", body: "toggle help"}},
+		{views: []string{hlp.name}, keys: []interface{}{'h', ui.KeyEsc}, keybinding: viewLocked(hlp.hide)},
+		{views: []string{hlp.name}, keys: []interface{}{ui.KeyCtrlJ}, keybinding: viewLocked(hlp.jump)},
 	}
 }
 
