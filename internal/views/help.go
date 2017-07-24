@@ -97,8 +97,19 @@ func (h *help) doJump(g *ui.Gui, v *ui.View) {
 	helpWidth = w
 	v.Clear()
 	g.DeleteView("movie")
-	g.SetCurrentView(hlp.name)
-	currentView = hlp.name
+
+	g.Execute(func(g *ui.Gui) error {
+		coords := getHelpCoords(g)
+		v, err := g.SetView("help", coords.x1, coords.y1, coords.x2, coords.y2)
+		if err != ui.ErrUnknownView {
+			return err
+		}
+		v.Title = h.name
+		_, err = g.SetCurrentView("help")
+		v.Write([]byte(helpMsg))
+		currentView = h.name
+		return nil
+	})
 }
 
 func (h *help) hide(g *ui.Gui, v *ui.View) error {
