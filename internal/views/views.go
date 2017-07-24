@@ -37,6 +37,7 @@ func init() {
 
 	searchTrigger = make(chan searchItem)
 	c1, c2, c3 = getColors()
+	jumpSteps = getJumpSteps()
 }
 
 type searchItem struct {

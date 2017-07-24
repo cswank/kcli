@@ -3,13 +3,14 @@ package views
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"time"
 
 	ui "github.com/jroimartin/gocui"
 )
 
 var (
-	helpWidth  = 90
+	helpWidth  = 47
 	helpHeight = 15
 	tpl        = `%s             C-x means Control x`
 	helpMsg    []byte
@@ -63,124 +64,26 @@ func (h *help) jump(g *ui.Gui, v *ui.View) error {
 	return nil
 }
 
-type helpStep struct {
-	rows     []string
-	duration time.Duration
-}
-
 func (h *help) doJump(g *ui.Gui, v *ui.View) {
-	steps := []helpStep{
-		{
-			rows: []string{
-				c1("partition     1st offset             current offset         last offset            size"),
-				c2("0             0                      0                      1100                   1100"),
-			},
-			duration: 2 * time.Second,
-		},
-		{
-			rows: []string{
-				c1("partition     1st offset             current offset         last offset            size"),
-				c2("0             0                      0                      1100                   1100"),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2("jump:"),
-			},
-			duration: 1 * time.Second,
-		},
-		{
-			rows: []string{
-				c1("partition     1st offset             current offset         last offset            size"),
-				c2("0             0                      0                      1100                   1100"),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2("jump: -"),
-			},
-			duration: 100 * time.Millisecond,
-		},
-		{
-			rows: []string{
-				c1("partition     1st offset             current offset         last offset            size"),
-				c2("0             0                      0                      1100                   1100"),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2("jump: -3"),
-			},
-			duration: 100 * time.Millisecond,
-		},
-		{
-			rows: []string{
-				c1("partition     1st offset             current offset         last offset            size"),
-				c2("0             0                      0                      1100                   1100"),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2("jump: -30"),
-			},
-			duration: 100 * time.Millisecond,
-		},
-		{
-			rows: []string{
-				c1("partition     1st offset             current offset         last offset            size"),
-				c2("0             0                      1070                   1100                   1100"),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2(""),
-				c2("jump: -30"),
-			},
-			duration: 100 * time.Millisecond,
-		},
+	w := helpWidth
+	helpWidth = 90
+	coords := getHelpCoords(g)
+	var err error
+	v, err = g.SetView("movie", coords.x1, coords.y1, coords.x2, coords.y2)
+	if err != ui.ErrUnknownView {
+		log.Println("coudn't create movie view")
+		return
 	}
 
-	for _, step := range steps {
+	v.SetCursor(0, 0)
+
+	tpl := "    %s\n"
+	for _, step := range jumpSteps {
 		g.Execute(func(g *ui.Gui) error {
 			v.SetCursor(0, 0)
 			v.Clear()
-			for _, row := range step.rows {
-				fmt.Fprintln(v, row)
-			}
+			fmt.Fprintf(v, tpl, c1(step.caption))
+			fmt.Fprintf(v, step.template, step.args...)
 			return nil
 		})
 		select {
@@ -190,9 +93,12 @@ func (h *help) doJump(g *ui.Gui, v *ui.View) {
 		case <-time.After(step.duration):
 		}
 	}
+
+	helpWidth = w
 	v.Clear()
-	g.DeleteView(hlp.name)
-	currentView = bod.name
+	g.DeleteView("movie")
+	g.SetCurrentView(hlp.name)
+	currentView = hlp.name
 }
 
 func (h *help) hide(g *ui.Gui, v *ui.View) error {
