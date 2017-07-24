@@ -23,7 +23,33 @@ Once you start kcli type 'h' to see the help menu:
 
 <img src="./docs/help.png" width="396"/>
 
-If you don't like the colors you can set KCLI_COLOR[1,2,3] to one of:
+### Jumping
+You can use the jump command (C-j) to set the current offset of a partition
+or topic.  Jumping on a partition is simple: the number you enter becomes
+the current offset.  Jumping on a topic is a bit different.  The number you
+enter sets the current offset of each partition relative to either the 1st
+offset or last offset.  If the number you enter (N) is positive then the current
+offset becomes first offset + N.  If the number you enter is negative
+then the current offset becomes last offset + N.
+
+### Searching
+You can search for a string on either a partition or topic.  When you search
+on a partition then the current offset is set to the first message that
+contains the search string.  When you search on a topic then only the topics
+that contain a match are printed to the screen and their current offset is
+set to the first message that contains that match.
+
+If you have partitions that have large amounts of data then it can take a
+long time to search through all the partitions.  It is sometimes useful
+to use the partition jump functionality described above to speed up your
+search if you have an idea where the message might be.  If you know the message
+you are searching for is fairly recent then you can use a negative jump to set
+each offset close to then last offset.  The search will then start from those
+offsets.
+
+### Screen Colors
+
+If you don't like the defaul colors you can set KCLI_COLOR[1,2,3] to one of:
 
 * black
 * red
