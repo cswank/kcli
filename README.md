@@ -64,9 +64,10 @@ For example:
 
     $ KCLI_COLOR1=red KCLI_COLOR2=yellow kcli
 
-See it in action at [asciinema](https://asciinema.org/a/7wobtflusydvswbsn1d320o1g)
 
-[![asciicast](https://asciinema.org/a/7wobtflusydvswbsn1d320o1g.png)](https://asciinema.org/a/7wobtflusydvswbsn1d320o1g)
+See it in action at [asciinema](https://asciinema.org/a/wTeIxxlIhgQzSQv9mIAG689sP)
+
+[![asciicast](https://asciinema.org/a/wTeIxxlIhgQzSQv9mIAG689sP.png)](https://asciinema.org/a/wTeIxxlIhgQzSQv9mIAG689sP)
 
 NOTE: If you are connecting to a local kafka that is running in a docker container
 using wurstmeister/kafka you may have the env KAFKA_ADVERTISED_HOST_NAME set to
