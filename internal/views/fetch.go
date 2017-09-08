@@ -42,7 +42,7 @@ func getTopicsRows(size int, topics []string) [][]row {
 	return split(r, size)
 }
 
-func getTopic(size int, i interface{}) (page, error) {
+func getTopic(size, width int, i interface{}) (page, error) {
 	topic, ok := i.(string)
 	if !ok {
 		return page{}, fmt.Errorf("getTopic could not accept arg: %v", i)
@@ -70,7 +70,7 @@ func getTopicRows(size int, partitions []kafka.Partition) [][]row {
 	return split(r, size)
 }
 
-func getPartition(size int, i interface{}) (page, error) {
+func getPartition(size, width int, i interface{}) (page, error) {
 	partition, ok := i.(kafka.Partition)
 	if !ok {
 		return page{}, fmt.Errorf("getPartition could not accept arg: %v", i)
@@ -89,7 +89,7 @@ func getPartition(size int, i interface{}) (page, error) {
 		f = func(val []byte) bool { return true }
 	}
 
-	rows, err := getPartitionRows(size, partition, f)
+	rows, err := getPartitionRows(size, width, partition, f)
 	if err != nil {
 		return page{}, err
 	}
@@ -126,32 +126,36 @@ func nextPartitionPage() ([]row, error) {
 		f = func(val []byte) bool { return true }
 	}
 
-	return getPartitionRows(bod.size, p, f)
+	return getPartitionRows(bod.size, bod.width, p, f)
 }
 
-func getPartitionRows(size int, partition kafka.Partition, f func([]byte) bool) ([]row, error) {
+func getPartitionRows(size, width int, partition kafka.Partition, f func([]byte) bool) ([]row, error) {
 	msgs, err := kafka.GetPartition(partition, size, f)
 	if err != nil {
 		return nil, err
 	}
 
-	return getMsgsRows(msgs), nil
+	return getMsgsRows(msgs, width), nil
 }
 
-func getMsgsRows(msgs []kafka.Msg) []row {
+func getMsgsRows(msgs []kafka.Msg, width int) []row {
 	r := make([]row, len(msgs))
 	for i, m := range msgs {
+		end := width
+		if len(m.Value) < end {
+			end = len(m.Value) - 1
+		}
 		r[i] = row{
 			truncate: true,
 			args:     m,
-			value:    fmt.Sprintf("%-12d %s", m.Partition.Offset, string(m.Value)),
+			value:    fmt.Sprintf("%-12d %s", m.Partition.Offset, string(m.Value[:end])),
 		}
 	}
 
 	return r
 }
 
-func getMessage(size int, i interface{}) (page, error) {
+func getMessage(size, width int, i interface{}) (page, error) {
 	msg, ok := i.(kafka.Msg)
 	if !ok {
 		return page{}, fmt.Errorf("getMessage could not accept arg: %v", i)

@@ -9,6 +9,7 @@ import (
 
 type body struct {
 	size   int
+	width  int
 	name   string
 	coords coords
 }
@@ -17,6 +18,7 @@ func newBody(w, h int) *body {
 	return &body{
 		name:   "body",
 		size:   h - 2,
+		width:  w,
 		coords: coords{x1: -1, y1: 0, x2: w, y2: h - 1},
 	}
 }
@@ -55,6 +57,7 @@ func (b *body) color(val, search string, truncate bool) string {
 
 func (b *body) resize(w, h int) {
 	b.size = h - 2
+	b.width = w
 	b.coords = coords{x1: -1, y1: 0, x2: w, y2: h - 1}
 	pg.resize(b.size)
 }

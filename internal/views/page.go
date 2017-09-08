@@ -11,7 +11,7 @@ type page struct {
 	search string
 	filter bool
 
-	next    func(int, interface{}) (page, error)
+	next    func(int, int, interface{}) (page, error)
 	forward func() ([]row, error)
 	back    func() error
 }
@@ -250,7 +250,7 @@ func (p *pages) jumpPartition(msg kafka.Msg, page page, n int64, s string, f boo
 
 	part.Offset = n
 	var err error
-	page, err = getPartition(bod.size, part)
+	page, err = getPartition(bod.size, bod.width, part)
 	if err != nil {
 		p.add(page)
 		return err

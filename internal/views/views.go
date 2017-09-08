@@ -179,14 +179,14 @@ func back(g *ui.Gui, v *ui.View) error {
 //func is called to get then next page.
 func sel(g *ui.Gui, v *ui.View) error {
 	_, cur := v.Cursor()
-	_, size := v.Size()
+	width, size := v.Size()
 
 	p, r := pg.sel(cur)
 	if p.name == "message" {
 		return nil
 	}
 
-	n, err := p.next(size, r.args)
+	n, err := p.next(size, width, r.args)
 	if err == errNoContent {
 		msgs <- "nothing to see here"
 		return nil
