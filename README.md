@@ -3,7 +3,7 @@ Kcli is a kafka read only command line browser.
 
 ## Install
 
-Binaries are provided [here](https://github.com/cswank/kcli/releases/tag/1.1.0) (windows
+Binaries are provided [here](https://github.com/cswank/kcli/releases/tag/1.4.1) (windows
 is not tested).  If you have go installed you can do:
 
     $ go get -u github.com/cswank/kcli
@@ -19,9 +19,25 @@ is not tested).  If you have go installed you can do:
                        comma seperated list of kafka addresses
       -l, --logs=LOGS  for debugging, set the log output to a file
 
+After starting it up you get a list of topics:
+
+<img src="./docs/one.png"/>
+
 Once you start kcli type 'h' to see the help menu:
 
-<img src="./docs/help.png" width="396"/>
+<img src="./docs/two.png"/>
+
+Navigate to a topic and hit enter to see the partitions:
+
+<img src="./docs/three.png"/>
+
+Navigate to a partition and hit enter to see a page of messages:
+
+<img src="./docs/four.png"/>
+
+And navigate to a message and hit enter to see the message:
+
+<img src="./docs/five.png"/>
 
 ### Jumping
 You can use the jump command (C-j) to set the current offset of a partition
