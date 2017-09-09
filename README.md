@@ -23,7 +23,7 @@ After starting it up you get a list of topics:
 
 <img src="./docs/one.png"/>
 
-Once you start kcli type 'h' to see the help menu:
+Type 'h' to see the help menu (type 'h' again to toggle the help menu off):
 
 <img src="./docs/two.png"/>
 
