@@ -63,7 +63,7 @@ func getTopic(size, width int, i interface{}) (page, error) {
 
 func getTopicRows(size int, partitions []kafka.Partition) [][]row {
 	r := make([]row, len(partitions))
-	tpl := colors.Green("%-13d %-22d %-22d %-22d %d")
+	tpl := c2("%-13d %-22d %-22d %-22d %d")
 	for i, p := range partitions {
 		r[i] = row{args: p, value: fmt.Sprintf(tpl, p.Partition, p.Start, p.Offset, p.End, p.End-p.Start), truncate: true}
 	}
