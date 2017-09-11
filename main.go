@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/cswank/kcli/internal/kafka"
 	"github.com/cswank/kcli/internal/views"
@@ -23,7 +24,7 @@ var (
 func init() {
 	kingpin.Parse()
 
-	if err := kafka.Connect(*addrs); err != nil {
+	if err := kafka.Connect(getAddresses(*addrs)); err != nil {
 		log.Fatal(err)
 	}
 
@@ -40,7 +41,6 @@ func init() {
 }
 
 func main() {
-
 	var err error
 	g, err = ui.NewGui(ui.OutputNormal)
 	if err != nil {
@@ -81,4 +81,12 @@ func main() {
 	if views.After != nil {
 		views.After()
 	}
+}
+
+func getAddresses(addrs []string) []string {
+	var out []string
+	for _, addr := range addrs {
+		out = append(out, strings.Split(addr, ",")...)
+	}
+	return out
 }
