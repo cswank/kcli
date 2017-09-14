@@ -159,7 +159,7 @@ func (p *pages) searchTopic(s string, firstResult bool, cb func(int, int)) (int,
 
 	newPg := page{
 		name:   "topic",
-		header: c1("partition     1st offset             current offset         last offset            size"),
+		header: "partition     1st offset             current offset         last offset            size",
 		body:   getTopicRows(size, found),
 		next:   getPartition,
 		search: s,

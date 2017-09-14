@@ -38,14 +38,14 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	if key == ui.KeySpace {
 		in = " "
 	}
-	s := strings.TrimSpace(v.Buffer())
+	s := c1(strings.TrimSpace(v.Buffer()))
 	if key == 127 && len(s) > 0+len(f.function)+2 {
 		v.Clear()
 		s = s[:len(s)-1]
 		v.Write([]byte(s))
 		v.SetCursor(len(s), 0)
 	} else if f.acceptable(in) {
-		fmt.Fprint(v, in)
+		fmt.Fprint(v, c1(in))
 		s = v.Buffer()
 		v.SetCursor(len(s)-1, 0)
 	}

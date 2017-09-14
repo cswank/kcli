@@ -24,6 +24,7 @@ var (
 	currentView string
 
 	c1, c2, c3 colors.Colorer
+	bg         ui.Attribute
 
 	//After gets called by main when the gui is closed (if it's not nil)
 	After func()
@@ -36,7 +37,7 @@ func init() {
 	msgs = make(chan string)
 
 	searchTrigger = make(chan searchItem)
-	c1, c2, c3 = getColors()
+	bg, c1, c2, c3 = getColors()
 }
 
 type searchItem struct {
@@ -75,7 +76,7 @@ func GetLayout(g *ui.Gui, width, height int) func(g *ui.Gui) error {
 	helpMsg = getHelpMsg()
 
 	ui.DefaultEditor = foot
-
+	g.BgColor = bg
 	currentView = bod.name
 
 	p, err := getTopics(bod.size, "")
@@ -226,7 +227,7 @@ func jump(g *ui.Gui, v *ui.View) error {
 	}
 
 	v.Clear()
-	v.Write([]byte("jump: "))
+	v.Write([]byte(c1("jump: ")))
 	foot.function = "jump"
 	return v.SetCursor(6, 0)
 }
@@ -254,7 +255,7 @@ func filter(g *ui.Gui, v *ui.View) error {
 	}
 
 	v.Clear()
-	v.Write([]byte("filter: "))
+	v.Write([]byte(c1("filter: ")))
 	foot.function = "filter"
 	return v.SetCursor(8, 0)
 }
@@ -274,7 +275,7 @@ func search(g *ui.Gui, v *ui.View) error {
 	}
 
 	v.Clear()
-	v.Write([]byte("search: "))
+	v.Write([]byte(c1("search: ")))
 	foot.function = "search"
 	foot.locked = true
 	return v.SetCursor(8, 0)

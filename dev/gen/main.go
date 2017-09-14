@@ -18,6 +18,7 @@ var (
 		"things":  `first_name: %s, last_name: %s, age: %d`,
 		"whatnot": `{"first_name": "%s", "last_name": "%s", "age": %d}`,
 		"items":   `%s,%s,%d`,
+		"other":   `{"first_name": "%s", "last_name": "%s", "age": %d}`,
 	}
 )
 

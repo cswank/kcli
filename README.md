@@ -65,7 +65,7 @@ offsets.
 
 ### Screen Colors
 
-If you don't like the defaul colors you can set KCLI_COLOR[1,2,3] to one of:
+If you don't like the defaul colors you can set KCLI_COLOR[0,1,2,3] to one of:
 
 * black
 * red
@@ -78,8 +78,9 @@ If you don't like the defaul colors you can set KCLI_COLOR[1,2,3] to one of:
 
 For example:
 
-    $ KCLI_COLOR1=red KCLI_COLOR2=yellow kcli
+    $ KCLI_COLOR0=white KCLI_COLOR1=blue KCLI_COLOR2=black KCLI_COLOR3=red
 
+<img src="./docs/six.png"/>
 
 See it in action at [asciinema](https://asciinema.org/a/wTeIxxlIhgQzSQv9mIAG689sP)
 

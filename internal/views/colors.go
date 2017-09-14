@@ -4,9 +4,11 @@ import (
 	"os"
 
 	"github.com/cswank/kcli/internal/colors"
+	ui "github.com/jroimartin/gocui"
 )
 
-func getColors() (colors.Colorer, colors.Colorer, colors.Colorer) {
+func getColors() (ui.Attribute, colors.Colorer, colors.Colorer, colors.Colorer) {
+	bg = colors.GetBackground(os.Getenv("KCLI_COLOR0"))
 	c1 := colors.Get(os.Getenv("KCLI_COLOR1"))
 	if c1 == nil {
 		c1 = colors.White
@@ -19,5 +21,5 @@ func getColors() (colors.Colorer, colors.Colorer, colors.Colorer) {
 	if c3 == nil {
 		c3 = colors.Yellow
 	}
-	return c1, c2, c3
+	return bg, c1, c2, c3
 }

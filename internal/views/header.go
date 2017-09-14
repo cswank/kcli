@@ -29,6 +29,6 @@ func (h *header) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
 	s := pg.header()
 	t := fmt.Sprintf("%%s%%%ds", h.width-len(s))
-	_, err := v.Write([]byte(fmt.Sprintf(c1(t), s, "type 'h' for help")))
+	_, err := v.Write([]byte(c1(fmt.Sprintf(t, s, "type 'h' for help"))))
 	return err
 }

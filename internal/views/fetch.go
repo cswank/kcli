@@ -55,7 +55,7 @@ func getTopic(size, width int, i interface{}) (page, error) {
 
 	return page{
 		name:   "topic",
-		header: c1("partition     1st offset             current offset         last offset            size"),
+		header: "partition     1st offset             current offset         last offset            size",
 		body:   getTopicRows(size, partitions),
 		next:   getPartition,
 	}, nil
@@ -96,7 +96,7 @@ func getPartition(size, width int, i interface{}) (page, error) {
 
 	return page{
 		name:    "partition",
-		header:  c1(fmt.Sprintf("offset       message    topic: %s partition: %d start: %d end: %d", partition.Topic, partition.Partition, partition.Start, partition.End)),
+		header:  fmt.Sprintf("offset       message    topic: %s partition: %d start: %d end: %d", partition.Topic, partition.Partition, partition.Start, partition.End),
 		body:    split(rows, size),
 		next:    getMessage,
 		forward: nextPartitionPage,
@@ -174,7 +174,7 @@ func getMessage(size, width int, i interface{}) (page, error) {
 
 	return page{
 		name:   "message",
-		header: c1(fmt.Sprintf("topic: %s partition: %d offset: %d", msg.Partition.Topic, msg.Partition.Partition, msg.Offset)),
+		header: fmt.Sprintf("topic: %s partition: %d offset: %d", msg.Partition.Topic, msg.Partition.Partition, msg.Offset),
 		body:   split(out, size),
 	}, nil
 }

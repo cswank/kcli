@@ -42,7 +42,7 @@ func init() {
 
 func main() {
 	var err error
-	g, err = ui.NewGui(ui.OutputNormal)
+	g, err = ui.NewGui(ui.Output256)
 	if err != nil {
 		log.Fatal("could not create gui", err)
 	}

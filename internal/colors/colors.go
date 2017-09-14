@@ -1,6 +1,10 @@
 package colors
 
-import "fmt"
+import (
+	"fmt"
+
+	ui "github.com/jroimartin/gocui"
+)
 
 var (
 	ansiColors = map[string]string{
@@ -24,7 +28,26 @@ var (
 		"cyan":    Cyan,
 		"white":   White,
 	}
+
+	background = map[string]ui.Attribute{
+		"black":   ui.ColorBlack,
+		"red":     ui.ColorRed,
+		"green":   ui.ColorGreen,
+		"yellow":  ui.ColorYellow,
+		"blue":    ui.ColorBlue,
+		"magenta": ui.ColorMagenta,
+		"cyan":    ui.ColorCyan,
+		"white":   ui.ColorWhite,
+	}
 )
+
+func GetBackground(s string) ui.Attribute {
+	c, ok := background[s]
+	if !ok {
+		return background["black"]
+	}
+	return c
+}
 
 type Colorer func(string) string
 
