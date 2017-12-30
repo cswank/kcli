@@ -77,10 +77,6 @@ func TestSimpleBrokerCommunication(t *testing.T) {
 			t.Fatal(err)
 		}
 		tt.runner(t, broker)
-		err = broker.Close()
-		if err != nil {
-			t.Error(err)
-		}
 		// Wait up to 500 ms for the remote broker to process the request and
 		// notify us about the metrics
 		timeout := 500 * time.Millisecond
@@ -91,6 +87,10 @@ func TestSimpleBrokerCommunication(t *testing.T) {
 			t.Errorf("No request received for: %s after waiting for %v", tt.name, timeout)
 		}
 		mb.Close()
+		err = broker.Close()
+		if err != nil {
+			t.Error(err)
+		}
 	}
 
 }
@@ -282,6 +282,19 @@ var brokerTestTable = []struct {
 			}
 			if response == nil {
 				t.Error("DescribeGroups request got no response!")
+			}
+		}},
+
+	{"ApiVersionsRequest",
+		[]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		func(t *testing.T, broker *Broker) {
+			request := ApiVersionsRequest{}
+			response, err := broker.ApiVersions(&request)
+			if err != nil {
+				t.Error(err)
+			}
+			if response == nil {
+				t.Error("ApiVersions request got no response!")
 			}
 		}},
 }

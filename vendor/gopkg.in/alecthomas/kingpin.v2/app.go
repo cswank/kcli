@@ -136,7 +136,7 @@ func (a *Application) Writer(w io.Writer) *Application {
 
 // ErrorWriter sets the io.Writer to use for errors.
 func (a *Application) ErrorWriter(w io.Writer) *Application {
-	a.usageWriter = w
+	a.errorWriter = w
 	return a
 }
 
@@ -402,6 +402,9 @@ func (a *Application) setDefaults(context *ParseContext) error {
 	flagElements := map[string]*ParseElement{}
 	for _, element := range context.Elements {
 		if flag, ok := element.Clause.(*FlagClause); ok {
+			if flag.name == "help" {
+				return nil
+			}
 			flagElements[flag.name] = element
 		}
 	}

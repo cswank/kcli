@@ -345,7 +345,7 @@ func doSearch(g *ui.Gui) {
 		var end int
 		n, err := pg.search(item.term, item.firstResult, func(a, b int) {
 			end = b
-			g.Execute(func(g *ui.Gui) error {
+			g.Update(func(g *ui.Gui) error {
 				v, _ := g.View("footer")
 				v.Clear()
 				fmt.Fprintf(v, strings.Repeat("|", foot.width*a/b))
@@ -370,7 +370,7 @@ func writeMsg(g *ui.Gui, msg string) {
 		return
 	}
 
-	g.Execute(func(g *ui.Gui) error {
+	g.Update(func(g *ui.Gui) error {
 		v, _ := g.View("footer")
 		v.Clear()
 		fmt.Fprint(v, msg)

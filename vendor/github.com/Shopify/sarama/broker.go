@@ -178,6 +178,13 @@ func (b *Broker) Close() error {
 	b.done = nil
 	b.responses = nil
 
+	if b.id >= 0 {
+		b.conf.MetricRegistry.Unregister(getMetricNameForBroker("incoming-byte-rate", b))
+		b.conf.MetricRegistry.Unregister(getMetricNameForBroker("request-rate", b))
+		b.conf.MetricRegistry.Unregister(getMetricNameForBroker("outgoing-byte-rate", b))
+		b.conf.MetricRegistry.Unregister(getMetricNameForBroker("response-rate", b))
+	}
+
 	if err == nil {
 		Logger.Printf("Closed connection to broker %s\n", b.addr)
 	} else {
@@ -346,6 +353,17 @@ func (b *Broker) ListGroups(request *ListGroupsRequest) (*ListGroupsResponse, er
 
 func (b *Broker) DescribeGroups(request *DescribeGroupsRequest) (*DescribeGroupsResponse, error) {
 	response := new(DescribeGroupsResponse)
+
+	err := b.sendAndReceive(request, response)
+	if err != nil {
+		return nil, err
+	}
+
+	return response, nil
+}
+
+func (b *Broker) ApiVersions(request *ApiVersionsRequest) (*ApiVersionsResponse, error) {
+	response := new(ApiVersionsResponse)
 
 	err := b.sendAndReceive(request, response)
 	if err != nil {

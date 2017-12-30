@@ -1,15 +1,99 @@
 # Changelog
 
-#### Unreleased
+#### Version 1.15.0 (2017-12-08)
 
 New Features:
+ - Claim official support for Kafka 1.0, though it did already work
+   ([#984](https://github.com/Shopify/sarama/pull/984)).
+ - Helper methods for Kafka version numbers to/from strings
+   ([#989](https://github.com/Shopify/sarama/pull/989)).
+ - Implement CreatePartitions request/response
+   ([#985](https://github.com/Shopify/sarama/pull/985)).
+
+Improvements:
+ - Add error codes 45-60
+   ([#986](https://github.com/Shopify/sarama/issues/986)).
+
+Bug Fixes:
+ - Fix slow consuming for certain Kafka 0.11/1.0 configurations
+   ([#982](https://github.com/Shopify/sarama/pull/982)).
+ - Correctly determine when a FetchResponse contains the new message format
+   ([#990](https://github.com/Shopify/sarama/pull/990)).
+ - Fix producing with multiple headers
+   ([#996](https://github.com/Shopify/sarama/pull/996)).
+ - Fix handling of truncated record batches
+   ([#998](https://github.com/Shopify/sarama/pull/998)).
+ - Fix leaking metrics when closing brokers
+   ([#991](https://github.com/Shopify/sarama/pull/991)).
+
+#### Version 1.14.0 (2017-11-13)
+
+New Features:
+ - Add support for the new Kafka 0.11 record-batch format, including the wire
+   protocol and the necessary behavioural changes in the producer and consumer.
+   Transactions and idempotency are not yet supported, but producing and
+   consuming should work with all the existing bells and whistles (batching,
+   compression, etc) as well as the new custom headers. Thanks to Vlad Hanciuta
+   of Arista Networks for this work. Part of
+   ([#901](https://github.com/Shopify/sarama/issues/901)).
+
+Bug Fixes:
+ - Fix encoding of ProduceResponse versions in test
+   ([#970](https://github.com/Shopify/sarama/pull/970)).
+ - Return partial replicas list when we have it
+   ([#975](https://github.com/Shopify/sarama/pull/975)).
+
+#### Version 1.13.0 (2017-10-04)
+
+New Features:
+ - Support for FetchRequest version 3
+   ([#905](https://github.com/Shopify/sarama/pull/905)).
+ - Permit setting version on mock FetchResponses
+   ([#939](https://github.com/Shopify/sarama/pull/939)).
+ - Add a configuration option to support storing only minimal metadata for
+   extremely large clusters
+   ([#937](https://github.com/Shopify/sarama/pull/937)).
+ - Add `PartitionOffsetManager.ResetOffset` for backtracking tracked offsets
+   ([#932](https://github.com/Shopify/sarama/pull/932)).
+
+Improvements:
+ - Provide the block-level timestamp when consuming compressed messages
+   ([#885](https://github.com/Shopify/sarama/issues/885)).
+ - `Client.Replicas` and `Client.InSyncReplicas` now respect the order returned
+   by the broker, which can be meaningful
+   ([#930](https://github.com/Shopify/sarama/pull/930)).
+ - Use a `Ticker` to reduce consumer timer overhead at the cost of higher
+   variance in the actual timeout
+   ([#933](https://github.com/Shopify/sarama/pull/933)).
+
+Bug Fixes:
+ - Gracefully handle messages with negative timestamps
+   ([#907](https://github.com/Shopify/sarama/pull/907)).
+ - Raise a proper error when encountering an unknown message version
+   ([#940](https://github.com/Shopify/sarama/pull/940)).
+
+#### Version 1.12.0 (2017-05-08)
+
+New Features:
+ - Added support for the `ApiVersions` request and response pair, and Kafka
+   version 0.10.2 ([#867](https://github.com/Shopify/sarama/pull/867)). Note
+   that you still need to specify the Kafka version in the Sarama configuration
+   for the time being.
  - Added a `Brokers` method to the Client which returns the complete set of
    active brokers ([#813](https://github.com/Shopify/sarama/pull/813)).
+ - Added an `InSyncReplicas` method to the Client which returns the set of all
+   in-sync broker IDs for the given partition, now that the Kafka versions for
+   which this was misleading are no longer in our supported set
+   ([#872](https://github.com/Shopify/sarama/pull/872)).
  - Added a `NewCustomHashPartitioner` method which allows constructing a hash
    partitioner with a custom hash method in case the default (FNV-1a) is not
    suitable
    ([#837](https://github.com/Shopify/sarama/pull/837),
     [#841](https://github.com/Shopify/sarama/pull/841)).
+
+Improvements:
+ - Recognize more Kafka error codes
+   ([#859](https://github.com/Shopify/sarama/pull/859)).
 
 Bug Fixes:
  - Fix an issue where decoding a malformed FetchRequest would not return the
@@ -19,6 +103,8 @@ Bug Fixes:
    `AddGroupProtocolMetadata` helpers; otherwise you will need to switch from
    the `GroupProtocols` field (now deprecated) to use `OrderedGroupProtocols`
    ([#812](https://github.com/Shopify/sarama/issues/812)).
+ - Fix an alignment-related issue with atomics on 32-bit architectures
+   ([#859](https://github.com/Shopify/sarama/pull/859)).
 
 #### Version 1.11.0 (2016-12-20)
 
