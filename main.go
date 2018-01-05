@@ -48,7 +48,9 @@ func main() {
 	}
 
 	w, h := g.Size()
-	g.SetManagerFunc(views.GetLayout(g, w, h))
+
+	s, err := views.NewScreen(g, w, h)
+	g.SetManagerFunc(s.GetLayout(g, w, h))
 	g.Cursor = true
 	g.InputEsc = true
 
@@ -63,7 +65,7 @@ func main() {
 		kafka.Close()
 	}()
 
-	if err := views.Keybindings(g); err != nil {
+	if err := s.Keybindings(g); err != nil {
 		log.Println(err)
 		return
 	}
@@ -78,8 +80,8 @@ func main() {
 
 	closed = true
 	g.Close()
-	if views.After != nil {
-		views.After()
+	if s.After != nil {
+		s.After()
 	}
 }
 

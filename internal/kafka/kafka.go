@@ -99,6 +99,7 @@ func GetPartition(part Partition, end int, f func([]byte) bool) ([]Msg, error) {
 	var i int
 	var last bool
 	for i < end && !last {
+		//log.Printf("i: %d, end: %d", i, end)
 		select {
 		case msg = <-pc.Messages():
 			if f(msg.Value) {
@@ -145,7 +146,7 @@ func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int
 
 	for _, p := range partitions {
 		go func(partition Partition, ch chan searchResult) {
-			i, err := Search(partition, s, f)
+			i, err := search(partition, s, f, func(_, _ int64) {})
 			ch <- searchResult{partition: partition, offset: i, error: err}
 		}(p, ch)
 	}
@@ -181,10 +182,11 @@ func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int
 	return results, nil
 }
 
-func Search(info Partition, s string, stop func() bool) (int64, error) {
+func search(info Partition, s string, stop func() bool, cb func(int64, int64)) (int64, error) {
 	n := int64(-1)
 	var i int64
 	err := consume(info, info.End, func(msg string) bool {
+		cb(i, info.End)
 		if strings.Contains(msg, s) {
 			n = i + info.Offset
 			return true
@@ -194,6 +196,10 @@ func Search(info Partition, s string, stop func() bool) (int64, error) {
 	})
 
 	return n, err
+}
+
+func Search(info Partition, s string, cb func(i, j int64)) (int64, error) {
+	return search(info, s, func() bool { return false }, cb)
 }
 
 func Fetch(info Partition, end int64, cb func(string)) error {

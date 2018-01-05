@@ -7,6 +7,7 @@ import (
 )
 
 type header struct {
+	text   string
 	name   string
 	coords coords
 	width  int
@@ -14,6 +15,7 @@ type header struct {
 
 func newHeader(w, h int) *header {
 	return &header{
+		text:   "topics",
 		name:   "header",
 		coords: coords{x1: -1, y1: -1, x2: w, y2: 1},
 		width:  w,
@@ -27,8 +29,7 @@ func (h *header) resize(w, _ int) {
 
 func (h *header) Render(g *ui.Gui, v *ui.View) error {
 	v.Clear()
-	s := pg.header()
-	t := fmt.Sprintf("%%s%%%ds", h.width-len(s))
-	_, err := v.Write([]byte(c1(fmt.Sprintf(t, s, "type 'h' for help"))))
+	t := fmt.Sprintf("%%s%%%ds", h.width-len(h.text))
+	_, err := v.Write([]byte(c1(fmt.Sprintf(t, h.text, "type 'h' for help"))))
 	return err
 }

@@ -2,13 +2,15 @@ package views
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	ui "github.com/jroimartin/gocui"
 )
 
-var (
+const (
 	chars = ` abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890.-,_ +/()*&^%$#@!:"`
 	nums  = "1234567890"
 )
@@ -19,18 +21,24 @@ type footer struct {
 	function string
 	locked   bool
 	width    int
+	setView  func(string)
+
+	jump   func(int64) error
+	offset func(int64) error
+	search chan<- string
 }
 
-func newFooter(w, h int) *footer {
-	return &footer{
+func newFooter(g *ui.Gui, w, h int, ch <-chan string, jump func(int64) error, offset func(int64) error, search chan<- string) *footer {
+	f := &footer{
 		name:   "footer",
 		coords: coords{x1: -1, y1: h - 2, x2: w, y2: h},
 		width:  w,
+		jump:   jump,
+		offset: offset,
+		search: search,
 	}
-}
-
-func (f *footer) resize(w, h int) {
-	f.coords = coords{x1: -1, y1: h - 2, x2: w, y2: h}
+	go f.flashMessage(g, ch)
+	return f
 }
 
 func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
@@ -38,11 +46,12 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	if key == ui.KeySpace {
 		in = " "
 	}
-	s := c1(strings.TrimSpace(v.Buffer()))
+	s := strings.TrimSpace(v.Buffer())
 	if key == 127 && len(s) > 0+len(f.function)+2 {
+		log.Println("key", key, s, len(s) > 0+len(f.function)+2)
 		v.Clear()
 		s = s[:len(s)-1]
-		v.Write([]byte(s))
+		v.Write([]byte(c1(s)))
 		v.SetCursor(len(s), 0)
 	} else if f.acceptable(in) {
 		fmt.Fprint(v, c1(in))
@@ -51,49 +60,50 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	}
 }
 
-func (f *footer) bail(g *ui.Gui, v *ui.View) error {
-	currentView = bod.name
-	v.Clear()
-
-	var err error
-	v, err = g.SetCurrentView(bod.name)
+func (f *footer) enter(g *ui.Gui, function string) error {
+	v, err := g.View("footer")
 	if err != nil {
 		return err
 	}
-	return v.SetCursor(0, 0)
+
+	v.Clear()
+	v.Write([]byte(c1(fmt.Sprintf("%s: ", function))))
+	f.function = function
+	return v.SetCursor(len(function)+2, 0)
+}
+
+func (f *footer) bail(g *ui.Gui, v *ui.View) error {
+	f.setView("body")
+	v.Clear()
+	return nil
 }
 
 func (f *footer) exit(g *ui.Gui, v *ui.View) error {
-	defer func() {
-		f.locked = false
-	}()
-
 	s := v.Buffer()
 	i := strings.Index(s, ":")
 	if i == -1 {
 		return nil
 	}
-	term := s[i+1:]
+	term := strings.TrimSpace(s[i+1:])
 	switch f.function {
 	case "jump":
 		n, err := strconv.ParseInt(strings.TrimSpace(term), 10, 64)
 		if err != nil {
 			return err
 		}
-		page := pg.pop()
-		page.search = ""
-		page.filter = false
-		pg.add(page)
-
-		if err := pg.jump(n, ""); err != nil {
+		if err := f.jump(n); err != nil {
 			return err
 		}
 	case "search":
-		keyLock = true
 		v.Clear()
-		return searchD.show(g, term)
-	case "filter":
-		if err := pg.filter(strings.TrimSpace(term)); err != nil {
+		f.search <- term
+		return f.bail(g, v)
+	case "offset":
+		n, err := strconv.ParseInt(strings.TrimSpace(term), 10, 64)
+		if err != nil {
+			return err
+		}
+		if err := f.offset(n); err != nil {
 			return err
 		}
 	}
@@ -109,6 +119,8 @@ func (f *footer) acceptable(s string) bool {
 		return f.isChar(s)
 	case "jump":
 		return f.isNum(s)
+	case "offset":
+		return f.isNum(s)
 	default:
 		return false
 	}
@@ -120,8 +132,35 @@ func (f *footer) isChar(s string) bool {
 
 func (f *footer) isNum(s string) bool {
 	x := nums
-	if pg.current().name == "topic" {
+	if f.function == "offset" {
 		x += "-"
 	}
 	return strings.Contains(x, s)
+}
+
+func (f *footer) flashMessage(g *ui.Gui, ch <-chan string) {
+	dur := time.Second * 100000
+	for {
+		select {
+		case m := <-ch:
+			dur = time.Second * 3
+			f.writeMsg(g, m)
+		case <-time.After(dur):
+			dur = time.Second * 100000
+			f.writeMsg(g, "")
+		}
+	}
+}
+
+func (f *footer) writeMsg(g *ui.Gui, msg string) {
+	// if foot.locked {
+	// 	return
+	// }
+
+	g.Update(func(g *ui.Gui) error {
+		v, _ := g.View("footer")
+		v.Clear()
+		fmt.Fprint(v, msg)
+		return nil
+	})
 }

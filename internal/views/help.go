@@ -8,15 +8,15 @@ import (
 )
 
 var (
-	helpWidth  = 47
+	helpWidth  = 49
 	helpHeight = 15
 	tpl        = `%s             C-x means Control x`
-	helpMsg    []byte
 )
 
 type help struct {
 	name   string
 	coords coords
+	body   []byte
 }
 
 func newHelp(w, h int) *help {
@@ -34,7 +34,12 @@ func getHelpCoords(g *ui.Gui) coords {
 	return coords{x1: x1, y1: y1, x2: x2, y2: y2}
 }
 
-func (h *help) show(g *ui.Gui, v *ui.View) error {
+func (h *help) show(g *ui.Gui, v *ui.View, keys []key) error {
+	v.Editable = false
+	if h.body == nil {
+		h.body = h.getBody(keys)
+	}
+
 	var err error
 
 	coords := getHelpCoords(g)
@@ -46,29 +51,17 @@ func (h *help) show(g *ui.Gui, v *ui.View) error {
 
 	v.Title = h.name
 
-	v.Write([]byte(helpMsg))
+	v.Write([]byte(h.body))
 	_, err = g.SetCurrentView("help")
-	currentView = h.name
 	return err
 }
 
 func (h *help) hide(g *ui.Gui, v *ui.View) error {
 	v.Clear()
-	if err := g.DeleteView(h.name); err != nil {
-		return err
-	}
-
-	vw, err := g.SetCurrentView(bod.name)
-	if err != nil {
-		return err
-	}
-
-	currentView = bod.name
-	vw.Clear()
-	return err
+	return g.DeleteView(h.name)
 }
 
-func getHelpMsg() []byte {
+func (h *help) getBody(keys []key) []byte {
 	out := &bytes.Buffer{}
 	for _, key := range keys {
 		h := key.help

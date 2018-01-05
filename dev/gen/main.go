@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"math/rand"
@@ -61,6 +62,32 @@ func main() {
 			}
 		}
 	}
+	l := make([]item, 400)
+	for i := 0; i < 400; i++ {
+		l[i] = item{
+			First: randName(firstNames),
+			Last:  randName(lastNames),
+			Age:   randAge(),
+		}
+	}
+
+	d, _ := json.Marshal(l)
+
+	msg := &sarama.ProducerMessage{
+		Topic: "miscellany",
+		Key:   sarama.StringEncoder("item"),
+		Value: sarama.StringEncoder(string(d)),
+	}
+	_, _, err = producer.SendMessage(msg)
+	if err != nil {
+		log.Fatal(err)
+	}
+}
+
+type item struct {
+	First string `json:"first"`
+	Last  string `json:"last"`
+	Age   int    `json:"name"`
 }
 
 func randName(names []string) string {

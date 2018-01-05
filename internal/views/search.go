@@ -2,7 +2,6 @@ package views
 
 import (
 	"fmt"
-	"strings"
 
 	ui "github.com/jroimartin/gocui"
 )
@@ -41,36 +40,36 @@ func (s *searchDialog) Render(g *ui.Gui, v *ui.View) error {
 	return nil
 }
 
-func (s *searchDialog) show(g *ui.Gui, term string) error {
-	p := pg.current()
-	if p.name == "partition" {
-		currentView = bod.name
-		_, err := g.SetCurrentView(bod.name)
-		searchTrigger <- searchItem{term: strings.TrimSpace(term)}
-		return err
-	}
+// func (s *searchDialog) show(g *ui.Gui, term string) error {
+// 	p := pg.current()
+// 	if p.name == "partition" {
+// 		currentView = bod.name
+// 		_, err := g.SetCurrentView(bod.name)
+// 		searchTrigger <- searchItem{term: strings.TrimSpace(term)}
+// 		return err
+// 	}
 
-	s.visible = true
-	s.term = term
-	currentView = s.name
-	return nil
-}
+// 	s.visible = true
+// 	s.term = term
+// 	currentView = s.name
+// 	return nil
+// }
 
-func (s *searchDialog) firstResult(g *ui.Gui, v *ui.View) error {
-	s.stopAtFirst = !s.stopAtFirst
-	return nil
-}
+// func (s *searchDialog) firstResult(g *ui.Gui, v *ui.View) error {
+// 	s.stopAtFirst = !s.stopAtFirst
+// 	return nil
+// }
 
-func (s *searchDialog) search(g *ui.Gui, v *ui.View) error {
-	s.visible = false
-	v.Clear()
-	if err := g.DeleteView(s.name); err != nil {
-		return err
-	}
+// func (s *searchDialog) search(g *ui.Gui, v *ui.View) error {
+// 	s.visible = false
+// 	v.Clear()
+// 	if err := g.DeleteView(s.name); err != nil {
+// 		return err
+// 	}
 
-	currentView = bod.name
-	vb, err := g.SetCurrentView(bod.name)
-	vb.SetCursor(0, 0)
-	searchTrigger <- searchItem{term: strings.TrimSpace(s.term), firstResult: s.stopAtFirst}
-	return err
-}
+// 	currentView = bod.name
+// 	vb, err := g.SetCurrentView(bod.name)
+// 	vb.SetCursor(0, 0)
+// 	searchTrigger <- searchItem{term: strings.TrimSpace(s.term), firstResult: s.stopAtFirst}
+// 	return err
+// }
