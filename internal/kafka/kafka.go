@@ -136,9 +136,9 @@ type searchResult struct {
 	error     error
 }
 
-func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int, int)) ([]Partition, error) {
+func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
 	ch := make(chan searchResult)
-	n := len(partitions)
+	n := int64(len(partitions))
 	var stop bool
 	f := func() bool {
 		return stop
@@ -158,7 +158,8 @@ func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int
 		nResults = 1
 	}
 
-	for i := 0; i < len(partitions); i++ {
+	var i int64
+	for i = 0; i < int64(len(partitions)); i++ {
 		r := <-ch
 		cb(i, n)
 		if r.error != nil {

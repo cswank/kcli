@@ -187,14 +187,15 @@ func (s *Screen) doSearch() {
 			return
 		}
 
-		if n < 0 {
+		if n > 0 {
+			if s.body.stack.name() == "topic" {
+				s.flashMessage <- fmt.Sprintf("%d partitions matched %s", n, term)
+			} else {
+				s.flashMessage <- fmt.Sprintf("found a match at offset %d", n)
+			}
+		} else {
 			s.flashMessage <- fmt.Sprintf("'%s' not found", term)
 		}
-		// if end > 0 {
-		// 	s.flashMessage <- fmt.Sprintf("%d of %d partitions matched %s", n, end, item.term)
-		// } else {
-		// 	s.flashMessage <- ""
-		// }
 		s.lock = false
 	}
 }

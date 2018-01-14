@@ -3,6 +3,7 @@ package views
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 
 	ui "github.com/jroimartin/gocui"
@@ -151,6 +152,11 @@ type stack struct {
 
 func newStack(f feeder) stack {
 	return stack{top: f, feeders: []feeder{f}}
+}
+
+func (s *stack) name() string {
+	t := reflect.TypeOf(s.top)
+	return t.Elem().Name()
 }
 
 func (s *stack) add(f feeder) {

@@ -110,7 +110,15 @@ func newTopic(t string, width, height int, flashMessage chan<- string) (feeder, 
 	}, err
 }
 
-func (t *topic) search(_ string, cb func(int64, int64)) (int64, error) { return -1, nil }
+func (t *topic) search(s string, cb func(int64, int64)) (int64, error) {
+	results, err := kafka.SearchTopic(t.partitions, s, false, cb)
+	if err != nil || len(results) == 0 {
+		return -1, err
+	}
+	t.partitions = results
+
+	return int64(len(results)), nil
+}
 
 func (t *topic) jump(i int64) error {
 	if int(i) >= len(t.partitions) || int(i) < 0 {
