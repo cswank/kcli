@@ -35,6 +35,10 @@ type root struct {
 
 func newRoot(width, height int, flashMessage chan<- string) (*root, error) {
 	topics, err := kafka.GetTopics()
+	if len(topics) == 0 {
+		return nil, fmt.Errorf("no topics found in kafka")
+	}
+
 	sort.Strings(topics)
 	return &root{
 		width:        width,
