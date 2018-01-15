@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cswank/kcli/internal/colors"
+	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -26,6 +27,7 @@ type coords struct {
 }
 
 type Screen struct {
+	client *kafka.Client
 	g      *ui.Gui
 	view   string
 	height int
@@ -46,15 +48,16 @@ type Screen struct {
 	After func()
 }
 
-func newScreen(g *ui.Gui, width, height int, opts ...func(*stack) error) (*Screen, error) {
+func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*stack) error) (*Screen, error) {
 	ch := make(chan string)
 	searchCh := make(chan string)
-	b, err := newBody(width, height, ch, opts...)
+	b, err := newBody(cli, width, height, ch, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Screen{
+		client:       cli,
 		g:            g,
 		view:         "body",
 		width:        width,
@@ -114,15 +117,15 @@ func getColors() (ui.Attribute, colors.Colorer, colors.Colorer, colors.Colorer) 
 	bg = colors.GetBackground(os.Getenv("KCLI_COLOR0"))
 	c1 := colors.Get(os.Getenv("KCLI_COLOR1"))
 	if c1 == nil {
-		c1 = colors.White
+		c1 = colors.Get("white")
 	}
 	c2 := colors.Get(os.Getenv("KCLI_COLOR2"))
 	if c2 == nil {
-		c2 = colors.Green
+		c2 = colors.Get("green")
 	}
 	c3 := colors.Get(os.Getenv("KCLI_COLOR3"))
 	if c3 == nil {
-		c3 = colors.Yellow
+		c3 = colors.Get("yellow")
 	}
 	return bg, c1, c2, c3
 }

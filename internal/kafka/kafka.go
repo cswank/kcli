@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -9,12 +10,13 @@ import (
 	"github.com/Shopify/sarama"
 )
 
-var (
-	GetTopics func() ([]string, error)
-	addrs     []string
-	cli       sarama.Client
-)
+//Client fetches from kafka
+type Client struct {
+	addrs  []string
+	sarama sarama.Client
+}
 
+//Partition holds information about a kafka partition
 type Partition struct {
 	Topic     string `json:"topic"`
 	Partition int32  `json:"partition"`
@@ -24,32 +26,51 @@ type Partition struct {
 	Filter    string `json:"filter"`
 }
 
+//String turns a partition into a string
 func (p *Partition) String() string {
 	d, _ := json.Marshal(p)
 	return string(d)
 }
 
-type Msg struct {
+//Message holds information about a single kafka message
+type Message struct {
 	Partition Partition `json:"partition"`
 	Value     []byte    `json:"msg"`
 	Offset    int64     `json:"offset"`
 }
 
-func Connect(a []string) error {
-	addrs = a
-	var err error
-	cli, err = sarama.NewClient(addrs, nil)
+func New(addrs []string, tunnel bool) (*Client, error) {
+	s, err := sarama.NewClient(addrs, nil)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	GetTopics = cli.Topics
-	return nil
+	cli := &Client{
+		sarama: s,
+		addrs:  addrs,
+	}
+
+	if tunnel {
+		brokers := cli.sarama.Brokers()
+		for _, b := range brokers {
+			fmt.Printf("broker: %+v\n", b)
+		}
+		// topics, err := cli.Topics()
+		// if err != nil {
+		// 	return err
+		// }
+	}
+	return cli, nil
 }
 
-func GetTopic(topic string) ([]Partition, error) {
-	partitions, err := cli.Partitions(topic)
+//GetTopics gets topics (duh)
+func (c *Client) GetTopics() ([]string, error) {
+	return c.sarama.Topics()
+}
 
+//GetTopic gets a single kafka topic
+func (c *Client) GetTopic(topic string) ([]Partition, error) {
+	partitions, err := c.sarama.Partitions(topic)
 	if err != nil {
 		return nil, err
 	}
@@ -57,12 +78,12 @@ func GetTopic(topic string) ([]Partition, error) {
 	out := make([]Partition, len(partitions))
 
 	for i, p := range partitions {
-		n, err := cli.GetOffset(topic, p, sarama.OffsetNewest)
+		n, err := c.sarama.GetOffset(topic, p, sarama.OffsetNewest)
 		if err != nil {
 			return nil, err
 		}
 
-		o, err := cli.GetOffset(topic, p, sarama.OffsetOldest)
+		o, err := c.sarama.GetOffset(topic, p, sarama.OffsetOldest)
 		if err != nil {
 			return nil, err
 		}
@@ -77,23 +98,25 @@ func GetTopic(topic string) ([]Partition, error) {
 	return out, nil
 }
 
-func GetPartition(part Partition, end int, f func([]byte) bool) ([]Msg, error) {
-	c, err := sarama.NewConsumer(addrs, nil)
+//GetPartition fetches a kafka partition.  It includes a callback func
+//so that the caller can tell it when to stop consuming.
+func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]Message, error) {
+	consumer, err := sarama.NewConsumer(c.addrs, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	pc, err := c.ConsumePartition(part.Topic, part.Partition, part.Offset)
+	pc, err := consumer.ConsumePartition(part.Topic, part.Partition, part.Offset)
 	if err != nil {
 		return nil, err
 	}
 
 	defer func() {
-		c.Close()
+		consumer.Close()
 		pc.Close()
 	}()
 
-	var out []Msg
+	var out []Message
 
 	var msg *sarama.ConsumerMessage
 	var i int
@@ -103,7 +126,7 @@ func GetPartition(part Partition, end int, f func([]byte) bool) ([]Msg, error) {
 		select {
 		case msg = <-pc.Messages():
 			if f(msg.Value) {
-				out = append(out, Msg{
+				out = append(out, Message{
 					Value:  msg.Value,
 					Offset: msg.Offset,
 					Partition: Partition{
@@ -124,10 +147,9 @@ func GetPartition(part Partition, end int, f func([]byte) bool) ([]Msg, error) {
 	return out, nil
 }
 
-func Close() {
-	if cli != nil {
-		cli.Close()
-	}
+//Close disconnects from kafka
+func (c *Client) Close() {
+	c.sarama.Close()
 }
 
 type searchResult struct {
@@ -136,7 +158,8 @@ type searchResult struct {
 	error     error
 }
 
-func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
+//SearchTopic allows the caller to search accross all partitions in a topic.
+func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
 	ch := make(chan searchResult)
 	n := int64(len(partitions))
 	var stop bool
@@ -146,7 +169,7 @@ func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int
 
 	for _, p := range partitions {
 		go func(partition Partition, ch chan searchResult) {
-			i, err := search(partition, s, f, func(_, _ int64) {})
+			i, err := c.search(partition, s, f, func(_, _ int64) {})
 			ch <- searchResult{partition: partition, offset: i, error: err}
 		}(p, ch)
 	}
@@ -183,10 +206,10 @@ func SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int
 	return results, nil
 }
 
-func search(info Partition, s string, stop func() bool, cb func(int64, int64)) (int64, error) {
+func (c *Client) search(info Partition, s string, stop func() bool, cb func(int64, int64)) (int64, error) {
 	n := int64(-1)
 	var i int64
-	err := consume(info, info.End, func(msg string) bool {
+	err := c.consume(info, info.End, func(msg string) bool {
 		cb(i, info.End)
 		if strings.Contains(msg, s) {
 			n = i + info.Offset
@@ -199,30 +222,33 @@ func search(info Partition, s string, stop func() bool, cb func(int64, int64)) (
 	return n, err
 }
 
-func Search(info Partition, s string, cb func(i, j int64)) (int64, error) {
-	return search(info, s, func() bool { return false }, cb)
+//Search is for searching for a string in a single kafka partition.
+//It stops at the first match.
+func (c *Client) Search(info Partition, s string, cb func(i, j int64)) (int64, error) {
+	return c.search(info, s, func() bool { return false }, cb)
 }
 
-func Fetch(info Partition, end int64, cb func(string)) error {
-	return consume(info, end, func(s string) bool {
+//Fetch gets all messages in a partition up intil the 'end' offset.
+func (c *Client) Fetch(info Partition, end int64, cb func(string)) error {
+	return c.consume(info, end, func(s string) bool {
 		cb(s)
 		return false
 	})
 }
 
-func consume(info Partition, end int64, cb func(string) bool) error {
-	c, err := sarama.NewConsumer(addrs, nil)
+func (c *Client) consume(info Partition, end int64, cb func(string) bool) error {
+	consumer, err := sarama.NewConsumer(c.addrs, nil)
 	if err != nil {
 		return err
 	}
 
-	pc, err := c.ConsumePartition(info.Topic, info.Partition, info.Offset)
+	pc, err := consumer.ConsumePartition(info.Topic, info.Partition, info.Offset)
 	if err != nil {
 		return err
 	}
 
 	defer func() {
-		c.Close()
+		consumer.Close()
 		pc.Close()
 	}()
 

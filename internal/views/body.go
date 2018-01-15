@@ -6,6 +6,7 @@ import (
 	"reflect"
 	"strings"
 
+	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -24,8 +25,8 @@ type body struct {
 	view         *ui.View
 }
 
-func newBody(w, h int, flashMessage chan string, opts ...func(*stack) error) (*body, error) {
-	r, err := newRoot(w, h-2, flashMessage)
+func newBody(cli *kafka.Client, w, h int, flashMessage chan string, opts ...func(*stack) error) (*body, error) {
+	r, err := newRoot(cli, w, h-2, flashMessage)
 	if err != nil {
 		return nil, err
 	}

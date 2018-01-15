@@ -27,11 +27,11 @@ func getMockTopic(topic string) ([]Partition, error) {
 	return p, nil
 }
 
-func getMockPartition(part Partition, num int) ([]Msg, error) {
+func getMockPartition(part Partition, num int) ([]Message, error) {
 	end := 100 + rand.Intn(5000)
-	m := make([]Msg, end)
+	m := make([]Message, end)
 	for i := 0; i < end; i++ {
-		m[i] = Msg{
+		m[i] = Message{
 			Value: []byte(fmt.Sprintf(`{"name": "%s", "age": %d}`, names[rand.Intn(len(names))], 1+rand.Intn(100))),
 			Partition: Partition{
 				Partition: part.Partition,

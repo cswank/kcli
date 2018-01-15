@@ -35,3 +35,7 @@
 [[constraint]]
   name = "gopkg.in/alecthomas/kingpin.v2"
   version = "2.2.6"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/benburkert/dns"

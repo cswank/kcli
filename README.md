@@ -21,6 +21,8 @@ is not tested).  If you have go installed you can do:
 	  -t, --topic=TOPIC   go directly to a topic
 	  -p, --partition=-1  go directly to a partition of a topic
 	  -o, --offset=-1     go directly to a message
+	      --ssh=SSH       ssh username for tunneling to kafka hosts
+          --port=22       ssh port for tunneling to kafka hosts
 
 After starting it up you get a list of topics:
 
@@ -41,6 +43,11 @@ Navigate to a partition and hit enter to see a page of messages:
 And navigate to a message and hit enter to see the message:
 
 <img src="./docs/five.png"/>
+
+### SSH Tunnels
+If you set the --ssh=\<SSH USERNAME> flag one ssh tunnel is opened up per
+kafka host from the --addresses flag so you can connect to a remote cluster.
+You must have password-less ssh enabled for this to work.
 
 ### Searching
 You can search for a string on either a partition or topic.  When you search

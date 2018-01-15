@@ -1,5 +1,4 @@
-// Package prettyjson provides JSON pretty print.
-// Copied from https://github.com/hokaccha/go-prettyjson so I could make changes
+//colors is Copied from https://github.com/hokaccha/go-prettyjson so I could make changes
 package colors
 
 import (
@@ -26,7 +25,7 @@ var (
 	}
 )
 
-// Formatter is a struct to format JSON data. `color` is github.com/fatih/color: https://github.com/fatih/color
+//Formatter is a struct to format JSON data. `color` is github.com/fatih/color: https://github.com/fatih/color
 type Formatter struct {
 	// JSON key color. Default is `color.New(color.FgBlue, color.Bold)`.
 	KeyColor *color.Color
@@ -75,7 +74,7 @@ func getColor(key string, defaultColor string) *color.Color {
 	return color.New(colors[c], color.Bold)
 }
 
-// Marshals and formats JSON data.
+// Marshal marshals and formats JSON data.
 func (f *Formatter) Marshal(v interface{}) ([]byte, error) {
 	data, err := json.Marshal(v)
 
@@ -86,7 +85,7 @@ func (f *Formatter) Marshal(v interface{}) ([]byte, error) {
 	return f.Format(data)
 }
 
-// Formats JSON string.
+//Format creates a colorful JSON string.
 func (f *Formatter) Format(data []byte) ([]byte, error) {
 	var v interface{}
 	err := json.Unmarshal(data, &v)
@@ -157,7 +156,7 @@ func (f *Formatter) processMap(m map[string]interface{}, depth int) string {
 		return "{}"
 	}
 
-	for key, _ := range m {
+	for key := range m {
 		keys = append(keys, key)
 	}
 
@@ -201,7 +200,7 @@ func Marshal(v interface{}) ([]byte, error) {
 	return NewFormatter().Marshal(v)
 }
 
-// Format JSON string with default options.
+//Format JSON string with default options.
 func Format(data []byte) ([]byte, error) {
 	return NewFormatter().Format(data)
 }

@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cswank/kcli/internal/kafka"
+	"github.com/cswank/kcli/internal/tunnel"
 	"github.com/cswank/kcli/internal/views"
 
 	ui "github.com/jroimartin/gocui"
@@ -20,21 +21,38 @@ var (
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()
 	partition = kingpin.Flag("partition", "go directly to a partition of a topic").Short('p').Default("-1").Int()
 	offset    = kingpin.Flag("offset", "go directly to a message").Short('o').Default("-1").Int()
+	ssh       = kingpin.Flag("ssh", "ssh username for tunneling to a kafka host.  This currently only works for a single kafka node, not a cluster").String()
+	sshPort   = kingpin.Flag("port", "ssh port for tunneling to kafka hosts").Default("22").Int()
 
 	f *os.File
 )
 
 func init() {
 	kingpin.Parse()
+}
 
-	if err := kafka.Connect(getAddresses(*addrs)); err != nil {
+func connect() *kafka.Client {
+	a, tun, err := getAddresses(*addrs)
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	cli, err := kafka.New(a, tun)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return cli
 }
 
 func main() {
 	setLogout()
-	err := views.NewGui(*topic, *partition, *offset)
+	cli := connect()
+	err := views.NewGui(cli, *topic, *partition, *offset)
 	if f != nil {
 		f.Close()
 		log.SetOutput(os.Stderr)
@@ -57,10 +75,21 @@ func setLogout() {
 	}
 }
 
-func getAddresses(addrs []string) []string {
+func getAddresses(addrs []string) ([]string, bool, error) {
+	var tun bool
 	var out []string
 	for _, addr := range addrs {
 		out = append(out, strings.Split(addr, ",")...)
 	}
-	return out
+
+	if *ssh != "" {
+		tun = true
+		t := tunnel.New(*ssh, *sshPort, out)
+		var err error
+		if out, err = t.Connect(); err != nil {
+			return nil, false, err
+		}
+	}
+
+	return out, tun, nil
 }
