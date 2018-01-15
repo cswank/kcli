@@ -352,7 +352,6 @@ func newMessage(msg kafka.Msg, width, height int, flashMessage chan<- string) (f
 }
 
 func (m *message) print() {
-	fmt.Println(m.header())
 	for _, r := range m.body {
 		fmt.Println(r)
 	}

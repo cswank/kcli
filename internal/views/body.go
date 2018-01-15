@@ -142,6 +142,9 @@ func (b *body) jump(i int64) error {
 }
 
 func (b *body) search(s string, cb func(int64, int64)) (int64, error) {
+	if err := b.view.SetCursor(0, 0); err != nil {
+		return -1, err
+	}
 	return b.stack.top.search(s, cb)
 }
 
