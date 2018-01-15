@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/cswank/kcli/internal/kafka"
+	"github.com/cswank/kcli/internal/tunnel"
 	"github.com/cswank/kcli/internal/views"
 
 	ui "github.com/jroimartin/gocui"
@@ -20,14 +21,23 @@ var (
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()
 	partition = kingpin.Flag("partition", "go directly to a partition of a topic").Short('p').Default("-1").Int()
 	offset    = kingpin.Flag("offset", "go directly to a message").Short('o').Default("-1").Int()
+	ssh       = kingpin.Flag("ssh", "ssh username for tunneling to kafka hosts").Short('s').String()
 
 	f *os.File
 )
 
 func init() {
 	kingpin.Parse()
+}
 
-	if err := kafka.Connect(getAddresses(*addrs)); err != nil {
+func connect() {
+	a, err := getAddresses()
+	log.Println("addresses", a, err)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := kafka.Connect(a); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -59,8 +69,17 @@ func setLogout() {
 
 func getAddresses(addrs []string) []string {
 	var out []string
-	for _, addr := range addrs {
+	for _, addr := range *addrs {
 		out = append(out, strings.Split(addr, ",")...)
 	}
-	return out
+
+	if *ssh != "" {
+		var err error
+		out, err = tunnel.Connect(*ssh, out)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return out, nil
 }
