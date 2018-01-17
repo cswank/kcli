@@ -26,6 +26,7 @@ type coords struct {
 }
 
 type Screen struct {
+	g      *ui.Gui
 	view   string
 	height int
 	width  int
@@ -50,6 +51,7 @@ func NewScreen(g *ui.Gui, width, height int) (*Screen, error) {
 	searchCh := make(chan string)
 	b, err := newBody(width, height, ch)
 	s := &Screen{
+		g:            g,
 		view:         "body",
 		width:        width,
 		height:       height,
@@ -179,9 +181,14 @@ func (s *Screen) doSearch() {
 	for {
 		s.view = "body"
 		term := <-s.searchChan
+		var i int
 		n, err := s.body.search(term, func(a, b int64) {
-			s.flashMessage <- fmt.Sprintf(strings.Repeat("|", int(int64(s.width)*a/b)))
+			if i%10 == 0 {
+				s.flashMessage <- fmt.Sprintf(strings.Repeat("|", int(int64(s.width)*a/b)))
+			}
+			i++
 		})
+
 		if err != nil {
 			s.flashMessage <- fmt.Sprintf("error: %s", err)
 			return
@@ -196,6 +203,11 @@ func (s *Screen) doSearch() {
 		} else {
 			s.flashMessage <- fmt.Sprintf("'%s' not found", term)
 		}
+
+		s.g.Update(func(g *ui.Gui) error {
+			v, _ := s.g.View("body")
+			return s.body.Render(g, v)
+		})
 		s.lock = false
 	}
 }
