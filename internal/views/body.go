@@ -24,7 +24,7 @@ type body struct {
 	view         *ui.View
 }
 
-func newBody(w, h int, flashMessage chan string, opts ...Init) (*body, error) {
+func newBody(w, h int, flashMessage chan string, opts ...func(*stack) error) (*body, error) {
 	r, err := newRoot(w, h-2, flashMessage)
 	if err != nil {
 		return nil, err
@@ -158,7 +158,7 @@ type stack struct {
 	feeders []feeder
 }
 
-func newStack(f feeder, opts ...Init) (stack, error) {
+func newStack(f feeder, opts ...func(*stack) error) (stack, error) {
 	s := stack{top: f, feeders: []feeder{f}}
 	for _, o := range opts {
 		if err := o(&s); err != nil {
@@ -188,9 +188,7 @@ func (s *stack) pop() {
 	s.top = s.feeders[len(s.feeders)-1]
 }
 
-type Init func(*stack) error
-
-func EnterTopic(t string) func(*stack) error {
+func enterTopic(t string) func(*stack) error {
 	return func(s *stack) error {
 		r, ok := s.top.(*root)
 		if !ok {
@@ -214,7 +212,7 @@ func EnterTopic(t string) func(*stack) error {
 	}
 }
 
-func EnterPartition(p int) func(*stack) error {
+func enterPartition(p int) func(*stack) error {
 	return func(s *stack) error {
 		t, ok := s.top.(*topic)
 		if !ok {
@@ -226,7 +224,7 @@ func EnterPartition(p int) func(*stack) error {
 	}
 }
 
-func EnterOffset(o int) func(*stack) error {
+func enterOffset(o int) func(*stack) error {
 	return func(s *stack) error {
 		p, ok := s.top.(*partition)
 		if !ok {

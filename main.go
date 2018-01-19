@@ -33,24 +33,18 @@ func init() {
 }
 
 func main() {
-	var err error
-	g, err = ui.NewGui(ui.Output256)
-	if err != nil {
-		g.Close()
-		kafka.Close()
-		log.Fatal("could not create gui", err)
+	setLogout()
+	err := views.NewGui(*topic, *partition, *offset)
+	if f != nil {
+		f.Close()
+		log.SetOutput(os.Stderr)
 	}
-
-	w, h := g.Size()
-
-	opts := getOpts()
-	s, err := views.NewScreen(g, w, h, opts...)
 	if err != nil {
-		g.Close()
-		kafka.Close()
-		log.Fatalf("error: %s", err)
+		log.Fatal(err)
 	}
+}
 
+func setLogout() {
 	if *logout != "" {
 		var err error
 		f, err = os.Create(*logout)
@@ -61,54 +55,6 @@ func main() {
 	} else {
 		log.SetOutput(ioutil.Discard)
 	}
-
-	g.SetManagerFunc(s.GetLayout(g, w, h))
-	g.Cursor = true
-	g.InputEsc = true
-
-	var closed bool
-	defer func() {
-		if !closed {
-			g.Close()
-		}
-		if f != nil {
-			f.Close()
-		}
-		kafka.Close()
-	}()
-
-	if err := s.Keybindings(g); err != nil {
-		log.Println(err)
-		return
-	}
-
-	if err := g.MainLoop(); err != nil {
-		if err != ui.ErrQuit {
-			log.SetOutput(os.Stderr)
-			log.Println(err)
-			return
-		}
-	}
-
-	closed = true
-	g.Close()
-	if s.After != nil {
-		s.After()
-	}
-}
-
-func getOpts() []views.Init {
-	var out []views.Init
-	if *topic != "" {
-		out = append(out, views.EnterTopic(*topic))
-		if *partition != -1 {
-			out = append(out, views.EnterPartition(*partition))
-			if *offset != -1 {
-				out = append(out, views.EnterOffset(*offset))
-			}
-		}
-	}
-	return out
 }
 
 func getAddresses(addrs []string) []string {

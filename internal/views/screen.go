@@ -46,7 +46,7 @@ type Screen struct {
 	After func()
 }
 
-func NewScreen(g *ui.Gui, width, height int, opts ...Init) (*Screen, error) {
+func newScreen(g *ui.Gui, width, height int, opts ...func(*stack) error) (*Screen, error) {
 	ch := make(chan string)
 	searchCh := make(chan string)
 	b, err := newBody(width, height, ch, opts...)
