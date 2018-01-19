@@ -64,9 +64,10 @@ On other views (topic and message views) jump navigates the cursor to the value
 you enter.
 
 ### Printing
-If enter C-p the contents of the current view will be printed to stdout.  If the current
-view is a partition then each message from the cursor to the end of the partition
-is printed to stdout.  This is useful if you want to process the messages, for example:
+If you enter C-p kcli will exit and the contents of the current view will be printed to
+stdout.  If the current view is a partition then each message from the cursor to the end
+of the partition is printed to stdout.  This is useful if you want to process the messages,
+for example:
 
     kcli | jq .age | awk '{s+=$1} END {print s}'
 
