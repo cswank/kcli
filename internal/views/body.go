@@ -214,11 +214,7 @@ func enterTopic(t string) func(*stack) error {
 
 func enterPartition(p int) func(*stack) error {
 	return func(s *stack) error {
-		t, ok := s.top.(*topic)
-		if !ok {
-			return fmt.Errorf("unexpected feeder: %T", s.top)
-		}
-		f, err := t.enter(p)
+		f, err := s.top.enter(p)
 		s.add(f)
 		return err
 	}
@@ -226,11 +222,7 @@ func enterPartition(p int) func(*stack) error {
 
 func enterOffset(o int) func(*stack) error {
 	return func(s *stack) error {
-		p, ok := s.top.(*partition)
-		if !ok {
-			return fmt.Errorf("unexpected feeder: %T", s.top)
-		}
-		f, err := p.enter(o)
+		f, err := s.top.enter(o)
 		s.add(f)
 		return err
 	}
