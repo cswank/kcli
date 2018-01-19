@@ -16,6 +16,7 @@ import (
 type feeder interface {
 	print()
 	getRows() ([]string, error)
+	len() int
 	page(page int) error
 	header() string
 	enter(row int) (feeder, error)
@@ -53,6 +54,10 @@ func (r *root) print() {
 	for _, t := range r.topics {
 		fmt.Println(t)
 	}
+}
+
+func (r *root) len() int {
+	return len(r.topics)
 }
 
 func (r *root) page(pg int) error {
@@ -112,6 +117,10 @@ func newTopic(t string, width, height int, flashMessage chan<- string) (feeder, 
 		fmt:          c2("%-13d %-22d %-22d %-22d %d"),
 		flashMessage: flashMessage,
 	}, err
+}
+
+func (t *topic) len() int {
+	return len(t.partitions)
 }
 
 func (t *topic) search(s string, cb func(int64, int64)) (int64, error) {
@@ -233,6 +242,10 @@ func newPartition(p kafka.Partition, width, height int, flashMessage chan<- stri
 		fmt:          "%-12d %s",
 		flashMessage: flashMessage,
 	}, err
+}
+
+func (p *partition) len() int {
+	return int(p.partition.End - p.partition.Start)
 }
 
 func (p *partition) search(s string, cb func(int64, int64)) (int64, error) {
@@ -370,6 +383,10 @@ func (m *message) header() string {
 		m.msg.Partition.Partition,
 		m.msg.Offset,
 	)
+}
+
+func (m *message) len() int {
+	return len(m.body)
 }
 
 func (m *message) page(pg int) error {
