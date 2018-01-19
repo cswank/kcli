@@ -10,14 +10,17 @@ is not tested).  If you have go installed you can do:
 
 ## Usage
 
-    $ kcli --help
-    usage: kcli [<flags>]
+	kcli --help
+	usage: kcli [<flags>]
 
-    Flags:
-          --help       Show context-sensitive help (also try --help-long and --help-man).
-      -a, --addresses=localhost:9092 ...
-                       comma seperated list of kafka addresses
-      -l, --logs=LOGS  for debugging, set the log output to a file
+	Flags:
+	      --help          Show context-sensitive help (also try --help-long and --help-man).
+	  -a, --addresses=localhost:9092 ...
+	                      comma seperated list of kafka addresses
+	  -l, --log=LOG       for debugging, set the log output to a file
+	  -t, --topic=TOPIC   go directly to a topic
+	  -p, --partition=-1  go directly to a partition of a topic
+	  -o, --offset=-1     go directly to a message
 
 After starting it up you get a list of topics:
 
@@ -39,15 +42,6 @@ And navigate to a message and hit enter to see the message:
 
 <img src="./docs/five.png"/>
 
-### Jumping
-You can use the jump command (C-j) to set the current offset of a partition
-or topic.  Jumping on a partition is simple: the number you enter becomes
-the current offset.  Jumping on a topic is a bit different.  The number you
-enter sets the current offset of each partition relative to either the 1st
-offset or last offset.  If the number you enter (N) is positive then the current
-offset becomes first offset + N.  If the number you enter is negative
-then the current offset becomes last offset + N.
-
 ### Searching
 You can search for a string on either a partition or topic.  When you search
 on a partition then the current offset is set to the first message that
@@ -57,11 +51,27 @@ set to the first message that contains that match.
 
 If you have partitions that have large amounts of data then it can take a
 long time to search through all the partitions.  It is sometimes useful
-to use the partition jump functionality described above to speed up your
+to use the partition offset functionality (C-o) to speed up your
 search if you have an idea where the message might be.  If you know the message
-you are searching for is fairly recent then you can use a negative jump to set
-each offset close to then last offset.  The search will then start from those
-offsets.
+you are searching for is fairly recent then you can use a negative offset to set
+the offset of each partition close to then last end.  The search will then start
+from those offsets.
+
+### Jumping
+You can use the jump command (C-j) to set the current offset of a partition.
+Jumping on a partition is simple: the number you enter becomes the current offset.
+On other views (topic and message views) jump navigates the cursor to the value
+you enter.
+
+### Printing
+If enter C-p the contents of the current view will be printed to stdout.  If the current
+view is a partition then each message from the cursor to the end of the partition
+is printed to stdout.  This is useful if you want to process the messages, for example:
+
+    kcli | jq .age | awk '{s+=$1} END {print s}'
+
+Assuming the messages that get printed are JSON, this print the sum of all age fields
+from each message in the partition.
 
 ### Screen Colors
 
