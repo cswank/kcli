@@ -46,10 +46,14 @@ type Screen struct {
 	After func()
 }
 
-func NewScreen(g *ui.Gui, width, height int) (*Screen, error) {
+func NewScreen(g *ui.Gui, width, height int, opts ...Init) (*Screen, error) {
 	ch := make(chan string)
 	searchCh := make(chan string)
-	b, err := newBody(width, height, ch)
+	b, err := newBody(width, height, ch, opts...)
+	if err != nil {
+		return nil, err
+	}
+
 	s := &Screen{
 		g:            g,
 		view:         "body",
@@ -66,7 +70,7 @@ func NewScreen(g *ui.Gui, width, height int) (*Screen, error) {
 	go s.doSearch()
 	s.footer.setView = func(v string) { s.view = v }
 	s.keys = s.getKeys()
-	return s, err
+	return s, nil
 }
 
 func (s *Screen) GetLayout(g *ui.Gui, width, height int) func(*ui.Gui) error {

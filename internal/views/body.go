@@ -24,15 +24,20 @@ type body struct {
 	view         *ui.View
 }
 
-func newBody(w, h int, flashMessage chan string) (*body, error) {
+func newBody(w, h int, flashMessage chan string, opts ...Init) (*body, error) {
 	r, err := newRoot(w, h-2, flashMessage)
+	if err != nil {
+		return nil, err
+	}
+
+	s, err := newStack(r, opts...)
 
 	return &body{
 		name:         "body",
 		height:       h - 2,
 		width:        w,
 		coords:       coords{x1: -1, y1: 0, x2: w, y2: h - 1},
-		stack:        newStack(r),
+		stack:        s,
 		flashMessage: flashMessage,
 	}, err
 }
@@ -153,8 +158,14 @@ type stack struct {
 	feeders []feeder
 }
 
-func newStack(f feeder) stack {
-	return stack{top: f, feeders: []feeder{f}}
+func newStack(f feeder, opts ...Init) (stack, error) {
+	s := stack{top: f, feeders: []feeder{f}}
+	for _, o := range opts {
+		if err := o(&s); err != nil {
+			return s, err
+		}
+	}
+	return s, nil
 }
 
 func (s *stack) name() string {
@@ -175,4 +186,54 @@ func (s *stack) pop() {
 	i := len(s.feeders) - 1
 	s.feeders = s.feeders[0:i]
 	s.top = s.feeders[len(s.feeders)-1]
+}
+
+type Init func(*stack) error
+
+func EnterTopic(t string) func(*stack) error {
+	return func(s *stack) error {
+		r, ok := s.top.(*root)
+		if !ok {
+			return fmt.Errorf("unexpected feeder: %T", s.top)
+		}
+		i := -1
+		for j, topic := range r.topics {
+			if t == topic {
+				i = j
+				break
+			}
+		}
+
+		if i == -1 {
+			return fmt.Errorf("could not find partition '%s'", t)
+		}
+
+		f, err := r.enter(i)
+		s.add(f)
+		return err
+	}
+}
+
+func EnterPartition(p int) func(*stack) error {
+	return func(s *stack) error {
+		t, ok := s.top.(*topic)
+		if !ok {
+			return fmt.Errorf("unexpected feeder: %T", s.top)
+		}
+		f, err := t.enter(p)
+		s.add(f)
+		return err
+	}
+}
+
+func EnterOffset(o int) func(*stack) error {
+	return func(s *stack) error {
+		p, ok := s.top.(*partition)
+		if !ok {
+			return fmt.Errorf("unexpected feeder: %T", s.top)
+		}
+		f, err := p.enter(o)
+		s.add(f)
+		return err
+	}
 }
