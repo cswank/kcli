@@ -31,8 +31,11 @@ func init() {
 }
 
 func connect() {
-	a, err := getAddresses()
-	log.Println("addresses", a, err)
+	a, err := getAddresses(*addrs)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,9 +70,9 @@ func setLogout() {
 	}
 }
 
-func getAddresses(addrs []string) []string {
+func getAddresses(addrs []string) ([]string, error) {
 	var out []string
-	for _, addr := range *addrs {
+	for _, addr := range addrs {
 		out = append(out, strings.Split(addr, ",")...)
 	}
 
