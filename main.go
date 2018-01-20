@@ -47,6 +47,7 @@ func connect() {
 
 func main() {
 	setLogout()
+	connect()
 	err := views.NewGui(*topic, *partition, *offset)
 	if f != nil {
 		f.Close()
@@ -77,9 +78,7 @@ func getAddresses(addrs []string) ([]string, error) {
 	}
 
 	if *ssh != "" {
-		var err error
-		out, err = tunnel.Connect(*ssh, out)
-		if err != nil {
+		if err := tunnel.Connect(*ssh, out); err != nil {
 			return nil, err
 		}
 	}
