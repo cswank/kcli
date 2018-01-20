@@ -16,7 +16,7 @@ func NewGui(topic string, partition, offset int) error {
 	}
 
 	w, h := g.Size()
-	opts := getOpts(topic, partition, offset)
+	opts := getOpts(h-2, topic, partition, offset)
 	s, err := newScreen(g, w, h, opts...)
 	if err != nil {
 		g.Close()
@@ -61,14 +61,14 @@ func NewGui(topic string, partition, offset int) error {
 	return nil
 }
 
-func getOpts(topic string, partition, offset int) []func(*stack) error {
+func getOpts(height int, topic string, partition, offset int) []func(*stack) error {
 	var out []func(*stack) error
 	if topic != "" {
-		out = append(out, enterTopic(topic))
+		out = append(out, enterTopic(height, topic))
 		if partition != -1 {
-			out = append(out, enterPartition(partition))
+			out = append(out, enterPartitionOrOffset(height, partition))
 			if offset != -1 {
-				out = append(out, enterOffset(offset))
+				out = append(out, enterPartitionOrOffset(height, offset))
 			}
 		}
 	}

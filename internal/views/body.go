@@ -188,7 +188,7 @@ func (s *stack) pop() {
 	s.top = s.feeders[len(s.feeders)-1]
 }
 
-func enterTopic(t string) func(*stack) error {
+func enterTopic(height int, t string) func(*stack) error {
 	return func(s *stack) error {
 		r, ok := s.top.(*root)
 		if !ok {
@@ -212,18 +212,17 @@ func enterTopic(t string) func(*stack) error {
 	}
 }
 
-func enterPartition(p int) func(*stack) error {
+func enterPartitionOrOffset(height, i int) func(*stack) error {
 	return func(s *stack) error {
-		f, err := s.top.enter(p)
-		s.add(f)
-		return err
-	}
-}
+		page := i / height
+		i = i - (page * height)
+		s.top.page(page)
+		f, err := s.top.enter(i)
+		if err != nil {
+			return err
+		}
 
-func enterOffset(o int) func(*stack) error {
-	return func(s *stack) error {
-		f, err := s.top.enter(o)
 		s.add(f)
-		return err
+		return nil
 	}
 }

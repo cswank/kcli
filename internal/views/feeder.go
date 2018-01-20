@@ -193,12 +193,12 @@ func (t *topic) enter(row int) (feeder, error) {
 	t.enteredAt = row
 	row = t.offset + row
 	if row >= len(t.partitions) {
-		t.flashMessage <- "nothing to see here"
+		go func() { t.flashMessage <- "nothing to see here" }()
 		return nil, errNoData
 	}
 	p := t.partitions[row]
 	if p.End-p.Start == 0 {
-		t.flashMessage <- "nothing to see here"
+		go func() { t.flashMessage <- "nothing to see here" }()
 		return nil, errNoData
 	}
 	return newPartition(p, t.width, t.height, t.flashMessage)
@@ -307,7 +307,7 @@ func (p *partition) page(pg int) error {
 
 func (p *partition) enter(row int) (feeder, error) {
 	if row >= len(p.rows) {
-		p.flashMessage <- "nothing to see here"
+		go func() { p.flashMessage <- "nothing to see here" }()
 		return nil, errNoData
 	}
 	p.enteredAt = row
