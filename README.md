@@ -44,7 +44,7 @@ And navigate to a message and hit enter to see the message:
 <img src="./docs/five.png"/>
 
 ### SSH Tunnels
-If you set the --ssh=`<SSH USERNAME>` flag one ssh tunnel is opened up per
+If you set the --ssh=\<SSH USERNAME> flag one ssh tunnel is opened up per
 kafka host from the --addresses flag so you can connect to a remote cluster.
 You must have password-less ssh enabled for this to work.
 
