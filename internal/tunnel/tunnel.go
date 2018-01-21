@@ -24,9 +24,9 @@ func (endpoint *Endpoint) String() string {
 }
 
 type connection struct {
-	local  string
-	server string
-	remote string
+	local     string
+	sshServer string
+	remote    string
 
 	cfg *ssh.ClientConfig
 }
@@ -86,9 +86,9 @@ func doConnect(addr, user string, sshPort int) (string, string, error) {
 
 	host := u.Hostname()
 	c := connection{
-		server: fmt.Sprintf("%s:%d", host, sshPort),
-		remote: addr,
-		local:  "127.0.0.1:",
+		sshServer: fmt.Sprintf("%s:%d", host, sshPort),
+		remote:    addr,
+		local:     "127.0.0.1:",
 		cfg: &ssh.ClientConfig{
 			User: user,
 			Auth: []ssh.AuthMethod{
@@ -124,7 +124,7 @@ func (c *connection) start() (string, error) {
 			log.Fatal(err)
 		}
 
-		serverConn, err := ssh.Dial("tcp", c.server, c.cfg)
+		serverConn, err := ssh.Dial("tcp", c.sshServer, c.cfg)
 		if err != nil {
 			log.Fatal(err)
 		}
