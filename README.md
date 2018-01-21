@@ -21,7 +21,8 @@ is not tested).  If you have go installed you can do:
 	  -t, --topic=TOPIC   go directly to a topic
 	  -p, --partition=-1  go directly to a partition of a topic
 	  -o, --offset=-1     go directly to a message
-	  -s, --ssh=SSH       ssh username for tunneling to kafka hosts
+	      --ssh=SSH       ssh username for tunneling to kafka hosts
+          --port=22       ssh port for tunneling to kafka hosts
 
 After starting it up you get a list of topics:
 
