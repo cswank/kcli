@@ -118,7 +118,7 @@ func (c *connection) start() (string, error) {
 	}
 	//defer listener.Close()
 
-	go func() {
+	go func(listener net.Listener) {
 		conn, err := listener.Accept()
 		if err != nil {
 			log.Fatal(err)
@@ -130,15 +130,12 @@ func (c *connection) start() (string, error) {
 		}
 
 		remoteConn, err := serverConn.Dial("tcp", c.remote)
-		log.Println("remote conn", c.remote, err)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		copyConn := func(writer, reader net.Conn) {
-			log.Println("io copy", err)
 			_, err := io.Copy(writer, reader)
-			log.Println("io copy", err)
 			if err != nil {
 				log.Fatalf("io.Copy error: %s", err)
 			}
@@ -146,7 +143,7 @@ func (c *connection) start() (string, error) {
 
 		go copyConn(conn, remoteConn)
 		go copyConn(remoteConn, conn)
-	}()
+	}(listener)
 	return listener.Addr().String(), nil
 }
 
