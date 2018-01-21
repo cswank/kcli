@@ -21,7 +21,8 @@ var (
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()
 	partition = kingpin.Flag("partition", "go directly to a partition of a topic").Short('p').Default("-1").Int()
 	offset    = kingpin.Flag("offset", "go directly to a message").Short('o').Default("-1").Int()
-	ssh       = kingpin.Flag("ssh", "ssh username for tunneling to kafka hosts").Short('s').String()
+	ssh       = kingpin.Flag("ssh", "ssh username for tunneling to kafka hosts").String()
+	sshPort   = kingpin.Flag("port", "ssh port for tunneling to kafka hosts").Default("22").Int()
 
 	f *os.File
 )
@@ -78,7 +79,7 @@ func getAddresses(addrs []string) ([]string, error) {
 	}
 
 	if *ssh != "" {
-		if err := tunnel.Connect(*ssh, out); err != nil {
+		if err := tunnel.Connect(*ssh, *sshPort, out); err != nil {
 			return nil, err
 		}
 	}

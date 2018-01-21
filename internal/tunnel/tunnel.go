@@ -1,13 +1,12 @@
 package tunnel
 
 import (
-	"context"
 	"fmt"
 	"io"
 	"log"
 	"net"
+	"net/url"
 	"os"
-	"strings"
 	"time"
 
 	"github.com/benburkert/dns"
@@ -32,7 +31,11 @@ type connection struct {
 	cfg *ssh.ClientConfig
 }
 
-func Connect(user string, addrs []string) error {
+//Connect creates an ssh tunnel for each address
+//passed in.  It also creates a dns lookup for the local
+//net.DefaultResolver so that hostname resolves to
+//the localhost address of the ssh tunnel.
+func Connect(user string, sshPort int, addrs []string) error {
 	out := make([]string, len(addrs))
 	zone := &dns.Zone{
 		TTL: 5 * time.Minute,
@@ -40,40 +43,27 @@ func Connect(user string, addrs []string) error {
 	}
 
 	for i, addr := range addrs {
-		host := strings.Split(addr, ":")[0]
-		zone.RRs[host] = []dns.Record{
-			&dns.A{A: net.IPv4(127, 0, 0, 1).To4()},
-			&dns.AAAA{AAAA: net.ParseIP("::1")},
-		}
-
-		c := connection{
-			server: fmt.Sprintf("%s:22", host),
-			remote: addr,
-			local:  "127.0.0.1:",
-			cfg: &ssh.ClientConfig{
-				User: user,
-				Auth: []ssh.AuthMethod{
-					sshAgent(),
-				},
-				HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-					return nil
-				},
-			},
-		}
-		local, err := c.start()
+		local, host, err := doConnect(addr, user, sshPort)
 		if err != nil {
 			return err
 		}
+
+		zone.RRs[host] = localDNS()
 		out[i] = local
 	}
 
-	srv := &dns.Server{
-		Addr:    ":53",
-		Handler: zone,
+	resolve(zone)
+	return nil
+}
+
+func localDNS() []dns.Record {
+	return []dns.Record{
+		&dns.A{A: net.IPv4(127, 0, 0, 1).To4()},
+		&dns.AAAA{AAAA: net.ParseIP("::1")},
 	}
+}
 
-	go srv.ListenAndServe(context.Background())
-
+func resolve(zone *dns.Zone) {
 	mux := new(dns.ResolveMux)
 	mux.Handle(dns.TypeANY, zone.Origin, zone)
 
@@ -85,8 +75,36 @@ func Connect(user string, addrs []string) error {
 		PreferGo: true,
 		Dial:     client.Dial,
 	}
+}
 
-	return nil
+//doConnect creates and starts a single ssh tunnel
+func doConnect(addr, user string, sshPort int) (string, string, error) {
+	u, err := url.Parse(addr)
+	if err != nil {
+		return "", "", err
+	}
+
+	host := u.Hostname()
+	c := connection{
+		server: fmt.Sprintf("%s:%d", host, sshPort),
+		remote: addr,
+		local:  "127.0.0.1:",
+		cfg: &ssh.ClientConfig{
+			User: user,
+			Auth: []ssh.AuthMethod{
+				sshAgent(),
+			},
+			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+				return nil
+			},
+		},
+	}
+	local, err := c.start()
+	if err != nil {
+		return "", "", err
+	}
+
+	return local, host, nil
 }
 
 func Close() error {
