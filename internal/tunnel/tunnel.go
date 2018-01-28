@@ -5,8 +5,8 @@ import (
 	"io"
 	"log"
 	"net"
-	"net/url"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/benburkert/dns"
@@ -23,47 +23,81 @@ func (endpoint *Endpoint) String() string {
 	return fmt.Sprintf("%s:%d", endpoint.Host, endpoint.Port)
 }
 
+type getListener func(protocol, host string) (net.Listener, error)
+
 type connection struct {
 	local     string
 	sshServer string
 	remote    string
+	listen    getListener
+	cfg       *ssh.ClientConfig
+}
 
-	cfg *ssh.ClientConfig
+type Tunnel struct {
+	user    string
+	sshPort int
+	addrs   []string
+	listen  getListener
+}
+
+func New(user string, sshPort int, addrs []string, opts ...func(t *Tunnel)) *Tunnel {
+	t := &Tunnel{
+		user:    user,
+		sshPort: sshPort,
+		addrs:   addrs,
+	}
+
+	for _, o := range opts {
+		o(t)
+	}
+
+	if t.listen == nil {
+		t.listen = net.Listen
+	}
+
+	return t
+}
+
+func Listen(f getListener) func(*Tunnel) {
+	return func(t *Tunnel) {
+		t.listen = f
+	}
 }
 
 //Connect creates an ssh tunnel for each address
 //passed in.  It also creates a dns lookup for the local
 //net.DefaultResolver so that hostname resolves to
 //the localhost address of the ssh tunnel.
-func Connect(user string, sshPort int, addrs []string) error {
-	out := make([]string, len(addrs))
+func (t *Tunnel) Connect() error {
+	out := make([]string, len(t.addrs))
 	zone := &dns.Zone{
 		TTL: 5 * time.Minute,
 		RRs: map[string][]dns.Record{},
 	}
 
-	for i, addr := range addrs {
-		local, host, err := doConnect(addr, user, sshPort)
+	for i, addr := range t.addrs {
+		local, host, err := t.doConnect(addr)
 		if err != nil {
 			return err
 		}
 
-		zone.RRs[host] = localDNS()
+		fmt.Println("host", host)
+		zone.RRs[host] = t.localDNS()
 		out[i] = local
 	}
 
-	resolve(zone)
+	t.resolve(zone)
 	return nil
 }
 
-func localDNS() []dns.Record {
+func (t *Tunnel) localDNS() []dns.Record {
 	return []dns.Record{
 		&dns.A{A: net.IPv4(127, 0, 0, 1).To4()},
 		&dns.AAAA{AAAA: net.ParseIP("::1")},
 	}
 }
 
-func resolve(zone *dns.Zone) {
+func (t *Tunnel) resolve(zone *dns.Zone) {
 	mux := new(dns.ResolveMux)
 	mux.Handle(dns.TypeANY, zone.Origin, zone)
 
@@ -78,19 +112,20 @@ func resolve(zone *dns.Zone) {
 }
 
 //doConnect creates and starts a single ssh tunnel
-func doConnect(addr, user string, sshPort int) (string, string, error) {
-	u, err := url.Parse(addr)
-	if err != nil {
-		return "", "", err
+func (t *Tunnel) doConnect(addr string) (string, string, error) {
+	parts := strings.Split(addr, ":")
+	if len(parts) != 2 {
+		return "", "", fmt.Errorf("invalid remote address (no port): %s", addr)
 	}
 
-	host := u.Hostname()
+	host := parts[0]
 	c := connection{
-		sshServer: fmt.Sprintf("%s:%d", host, sshPort),
+		listen:    t.listen,
+		sshServer: fmt.Sprintf("%s:%d", host, t.sshPort),
 		remote:    addr,
 		local:     "127.0.0.1:",
 		cfg: &ssh.ClientConfig{
-			User: user,
+			User: t.user,
 			Auth: []ssh.AuthMethod{
 				sshAgent(),
 			},
@@ -107,12 +142,9 @@ func doConnect(addr, user string, sshPort int) (string, string, error) {
 	return local, host, nil
 }
 
-func Close() error {
-	return nil
-}
-
 func (c *connection) start() (string, error) {
-	listener, err := net.Listen("tcp", c.local)
+	fmt.Printf("starting connection %+v\n", c)
+	listener, err := c.listen("tcp", c.local)
 	if err != nil {
 		return "", err
 	}
@@ -120,6 +152,7 @@ func (c *connection) start() (string, error) {
 
 	go func(listener net.Listener) {
 		conn, err := listener.Accept()
+		fmt.Println("listener accepted", conn, err)
 		if err != nil {
 			log.Fatal(err)
 		}
