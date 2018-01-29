@@ -81,7 +81,6 @@ func (t *Tunnel) Connect() error {
 			return err
 		}
 
-		fmt.Println("host", host)
 		zone.RRs[host] = t.localDNS()
 		out[i] = local
 	}
@@ -130,6 +129,7 @@ func (t *Tunnel) doConnect(addr string) (string, string, error) {
 				sshAgent(),
 			},
 			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
+				fmt.Println("host key cb", hostname, remote, key)
 				return nil
 			},
 		},
@@ -151,6 +151,7 @@ func (c *connection) start() (string, error) {
 	//defer listener.Close()
 
 	go func(listener net.Listener) {
+		fmt.Println("about to accept")
 		conn, err := listener.Accept()
 		fmt.Println("listener accepted", conn, err)
 		if err != nil {

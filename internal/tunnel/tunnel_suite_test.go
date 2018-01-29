@@ -49,7 +49,7 @@ var _ = Describe("Tunnel", func() {
 		}
 
 		addrs = []string{"127.0.0.1:9998", "localhost:9999"}
-		tun = tunnel.New("me", 9999, addrs, tunnel.Listen(listen))
+		tun = tunnel.New("me", 22, addrs, tunnel.Listen(listen))
 	})
 
 	Describe("Connect", func() {
