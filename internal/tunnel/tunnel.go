@@ -68,7 +68,7 @@ func Listen(f getListener) func(*Tunnel) {
 //passed in.  It also creates a dns lookup for the local
 //net.DefaultResolver so that hostname resolves to
 //the localhost address of the ssh tunnel.
-func (t *Tunnel) Connect() error {
+func (t *Tunnel) Connect() ([]string, error) {
 	out := make([]string, len(t.addrs))
 	zone := &dns.Zone{
 		TTL: 5 * time.Minute,
@@ -78,15 +78,15 @@ func (t *Tunnel) Connect() error {
 	for i, addr := range t.addrs {
 		local, host, err := t.doConnect(addr)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		zone.RRs[host] = t.localDNS()
-		out[i] = local
+		out[i] = fmt.Sprintf("%s:%s", host, strings.Split(local, ":")[1])
 	}
 
 	t.resolve(zone)
-	return nil
+	return out, nil
 }
 
 func (t *Tunnel) localDNS() []dns.Record {
@@ -104,10 +104,12 @@ func (t *Tunnel) resolve(zone *dns.Zone) {
 		Resolver: mux,
 	}
 
-	net.DefaultResolver = &net.Resolver{
+	r := &net.Resolver{
 		PreferGo: true,
 		Dial:     client.Dial,
 	}
+
+	net.DefaultResolver = r
 }
 
 //doConnect creates and starts a single ssh tunnel
@@ -118,10 +120,20 @@ func (t *Tunnel) doConnect(addr string) (string, string, error) {
 	}
 
 	host := parts[0]
+	addrs, err := net.LookupHost(host)
+	fmt.Println("looked up", addrs, err)
+	if err != nil {
+		return "", "", err
+	}
+
+	if len(addrs) == 0 {
+		return "", "", fmt.Errorf("couldn't look up host %s", host)
+	}
+
 	c := connection{
 		listen:    t.listen,
-		sshServer: fmt.Sprintf("%s:%d", host, t.sshPort),
-		remote:    addr,
+		sshServer: fmt.Sprintf("%s:%d", addrs[0], t.sshPort),
+		remote:    fmt.Sprintf("%s:%s", addrs[0], parts[1]),
 		local:     "127.0.0.1:",
 		cfg: &ssh.ClientConfig{
 			User: t.user,
@@ -129,7 +141,6 @@ func (t *Tunnel) doConnect(addr string) (string, string, error) {
 				sshAgent(),
 			},
 			HostKeyCallback: func(hostname string, remote net.Addr, key ssh.PublicKey) error {
-				fmt.Println("host key cb", hostname, remote, key)
 				return nil
 			},
 		},
@@ -145,6 +156,7 @@ func (t *Tunnel) doConnect(addr string) (string, string, error) {
 func (c *connection) start() (string, error) {
 	fmt.Printf("starting connection %+v\n", c)
 	listener, err := c.listen("tcp", c.local)
+	fmt.Println("connected", listener, err)
 	if err != nil {
 		return "", err
 	}

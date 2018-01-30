@@ -79,7 +79,9 @@ func getAddresses(addrs []string) ([]string, error) {
 	}
 
 	if *ssh != "" {
-		if err := tunnel.Connect(*ssh, *sshPort, out); err != nil {
+		t := tunnel.New(*ssh, *sshPort, out)
+		var err error
+		if out, err = t.Connect(); err != nil {
 			return nil, err
 		}
 	}
