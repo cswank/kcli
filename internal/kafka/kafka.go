@@ -2,6 +2,7 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -42,7 +43,19 @@ func Connect(a []string) error {
 	if err != nil {
 		return err
 	}
+	brokers := cli.Brokers()
+	b := brokers[0]
+	topics, err := cli.Topics()
+	if err != nil {
+		return err
+	}
 
+	resp, err := b.GetMetadata(&sarama.MetadataRequest{Topics: topics})
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("metadata: %+v\n", resp)
 	GetTopics = cli.Topics
 	return nil
 }
