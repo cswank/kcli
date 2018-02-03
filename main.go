@@ -31,8 +31,8 @@ func init() {
 	kingpin.Parse()
 }
 
-func connect() {
-	a, err := getAddresses(*addrs)
+func connect() *kafka.Client {
+	a, tun, err := getAddresses(*addrs)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -41,15 +41,18 @@ func connect() {
 		log.Fatal(err)
 	}
 
-	if err := kafka.Connect(a); err != nil {
+	cli, err := kafka.New(a, tun)
+	if err != nil {
 		log.Fatal(err)
 	}
+
+	return cli
 }
 
 func main() {
 	setLogout()
-	connect()
-	err := views.NewGui(*topic, *partition, *offset)
+	cli := connect()
+	err := views.NewGui(cli, *topic, *partition, *offset)
 	if f != nil {
 		f.Close()
 		log.SetOutput(os.Stderr)
@@ -72,19 +75,21 @@ func setLogout() {
 	}
 }
 
-func getAddresses(addrs []string) ([]string, error) {
+func getAddresses(addrs []string) ([]string, bool, error) {
+	var tun bool
 	var out []string
 	for _, addr := range addrs {
 		out = append(out, strings.Split(addr, ",")...)
 	}
 
 	if *ssh != "" {
+		tun = true
 		t := tunnel.New(*ssh, *sshPort, out)
 		var err error
 		if out, err = t.Connect(); err != nil {
-			return nil, err
+			return nil, false, err
 		}
 	}
 
-	return out, nil
+	return out, tun, nil
 }

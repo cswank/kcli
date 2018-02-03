@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/cswank/kcli/internal/colors"
+	"github.com/cswank/kcli/internal/kafka"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -26,6 +27,7 @@ type coords struct {
 }
 
 type Screen struct {
+	client *kafka.Client
 	g      *ui.Gui
 	view   string
 	height int
@@ -46,15 +48,16 @@ type Screen struct {
 	After func()
 }
 
-func newScreen(g *ui.Gui, width, height int, opts ...func(*stack) error) (*Screen, error) {
+func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*stack) error) (*Screen, error) {
 	ch := make(chan string)
 	searchCh := make(chan string)
-	b, err := newBody(width, height, ch, opts...)
+	b, err := newBody(cli, width, height, ch, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	s := &Screen{
+		client:       cli,
 		g:            g,
 		view:         "body",
 		width:        width,

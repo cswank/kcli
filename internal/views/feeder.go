@@ -25,6 +25,7 @@ type feeder interface {
 }
 
 type root struct {
+	cli          *kafka.Client
 	width        int
 	height       int
 	topics       []string
@@ -33,14 +34,15 @@ type root struct {
 	flashMessage chan<- string
 }
 
-func newRoot(width, height int, flashMessage chan<- string) (*root, error) {
-	topics, err := kafka.GetTopics()
+func newRoot(cli *kafka.Client, width, height int, flashMessage chan<- string) (*root, error) {
+	topics, err := cli.GetTopics()
 	if len(topics) == 0 {
 		return nil, fmt.Errorf("no topics found in kafka")
 	}
 
 	sort.Strings(topics)
 	return &root{
+		cli:          cli,
 		width:        width,
 		height:       height,
 		topics:       topics,
@@ -78,7 +80,7 @@ func (r *root) enter(row int) (feeder, error) {
 		return nil, errNoData
 	}
 	r.enteredAt = row
-	return newTopic(r.topics[row], r.width, r.height, r.flashMessage)
+	return newTopic(r.cli, r.topics[row], r.width, r.height, r.flashMessage)
 }
 
 func (r *root) jump(_ int64) error                                   { return nil }
@@ -91,6 +93,7 @@ func (r *root) header() string {
 }
 
 type topic struct {
+	cli    *kafka.Client
 	height int
 	width  int
 	offset int
@@ -102,9 +105,10 @@ type topic struct {
 	flashMessage chan<- string
 }
 
-func newTopic(t string, width, height int, flashMessage chan<- string) (feeder, error) {
-	partitions, err := kafka.GetTopic(t)
+func newTopic(cli *kafka.Client, t string, width, height int, flashMessage chan<- string) (feeder, error) {
+	partitions, err := cli.GetTopic(t)
 	return &topic{
+		cli:          cli,
 		width:        width,
 		height:       height,
 		topic:        t,
@@ -115,7 +119,7 @@ func newTopic(t string, width, height int, flashMessage chan<- string) (feeder, 
 }
 
 func (t *topic) search(s string, cb func(int64, int64)) (int64, error) {
-	results, err := kafka.SearchTopic(t.partitions, s, false, cb)
+	results, err := t.cli.SearchTopic(t.partitions, s, false, cb)
 	if err != nil || len(results) == 0 {
 		return -1, err
 	}
@@ -201,7 +205,7 @@ func (t *topic) enter(row int) (feeder, error) {
 		go func() { t.flashMessage <- "nothing to see here" }()
 		return nil, errNoData
 	}
-	return newPartition(p, t.width, t.height, t.flashMessage)
+	return newPartition(t.cli, p, t.width, t.height, t.flashMessage)
 }
 
 func (t *topic) print() {
@@ -213,6 +217,7 @@ func (t *topic) print() {
 }
 
 type partition struct {
+	cli          *kafka.Client
 	height       int
 	width        int
 	partition    kafka.Partition
@@ -223,9 +228,10 @@ type partition struct {
 	flashMessage chan<- string
 }
 
-func newPartition(p kafka.Partition, width, height int, flashMessage chan<- string) (feeder, error) {
-	rows, err := kafka.GetPartition(p, height, func(_ []byte) bool { return true })
+func newPartition(cli *kafka.Client, p kafka.Partition, width, height int, flashMessage chan<- string) (feeder, error) {
+	rows, err := cli.GetPartition(p, height, func(_ []byte) bool { return true })
 	return &partition{
+		cli:          cli,
 		width:        width,
 		height:       height,
 		partition:    p,
@@ -236,7 +242,7 @@ func newPartition(p kafka.Partition, width, height int, flashMessage chan<- stri
 }
 
 func (p *partition) search(s string, cb func(int64, int64)) (int64, error) {
-	i, err := kafka.Search(p.partition, s, cb)
+	i, err := p.cli.Search(p.partition, s, cb)
 	if err != nil || i == -1 {
 		return i, err
 	}
@@ -251,7 +257,7 @@ func (p *partition) jump(i int64) error {
 
 	p.pg = int(i) / p.height
 	p.partition.Offset = i
-	rows, err := kafka.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
+	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
 	if err != nil {
 		return err
 	}
@@ -297,7 +303,7 @@ func (p *partition) page(pg int) error {
 	}
 	p.pg += pg
 	p.partition.Offset = o
-	rows, err := kafka.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
+	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
 	if err != nil {
 		return err
 	}
@@ -315,7 +321,7 @@ func (p *partition) enter(row int) (feeder, error) {
 }
 
 func (p *partition) print() {
-	kafka.Fetch(p.partition, p.partition.End, func(s string) {
+	p.cli.Fetch(p.partition, p.partition.End, func(s string) {
 		fmt.Println(s)
 	})
 }

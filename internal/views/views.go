@@ -9,7 +9,7 @@ import (
 	ui "github.com/jroimartin/gocui"
 )
 
-func NewGui(topic string, partition, offset int) error {
+func NewGui(cli *kafka.Client, topic string, partition, offset int) error {
 	g, err := ui.NewGui(ui.Output256)
 	if err != nil {
 		return fmt.Errorf("could not create gui: %s", err)
@@ -17,10 +17,10 @@ func NewGui(topic string, partition, offset int) error {
 
 	w, h := g.Size()
 	opts := getOpts(h-2, topic, partition, offset)
-	s, err := newScreen(g, w, h, opts...)
+	s, err := newScreen(cli, g, w, h, opts...)
 	if err != nil {
 		g.Close()
-		kafka.Close()
+		cli.Close()
 		log.Fatalf("error: %s", err)
 	}
 
@@ -41,7 +41,7 @@ func NewGui(topic string, partition, offset int) error {
 		if !closed {
 			g.Close()
 		}
-		kafka.Close()
+		cli.Close()
 	}()
 
 	if err := g.MainLoop(); err != nil {
