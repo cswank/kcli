@@ -18,7 +18,7 @@ type key struct {
 	}
 }
 
-func (s *Screen) getKeys() []key {
+func (s *screen) getKeys() []key {
 	return []key{
 		{views: []string{s.body.name}, keys: []interface{}{'n', ui.KeyArrowDown}, keybinding: s.locked(s.body.next), help: keyHelp{key: "n", body: "(or down arrow) move cursor down"}},
 		{views: []string{s.body.name}, keys: []interface{}{'p', ui.KeyArrowUp}, keybinding: s.locked(s.body.prev), help: keyHelp{key: "p", body: "(or up arrow) move cursor up"}},

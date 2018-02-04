@@ -2,7 +2,6 @@ package kafka
 
 import (
 	"encoding/json"
-	"fmt"
 	"sort"
 	"strings"
 	"time"
@@ -39,6 +38,7 @@ type Message struct {
 	Offset    int64     `json:"offset"`
 }
 
+//New returns a kafka Client.
 func New(addrs []string, tunnel bool) (*Client, error) {
 	s, err := sarama.NewClient(addrs, nil)
 	if err != nil {
@@ -51,14 +51,9 @@ func New(addrs []string, tunnel bool) (*Client, error) {
 	}
 
 	if tunnel {
-		brokers := cli.sarama.Brokers()
-		for _, b := range brokers {
-			fmt.Printf("broker: %+v\n", b)
-		}
-		// topics, err := cli.Topics()
-		// if err != nil {
-		// 	return err
-		// }
+		//TODO: figure out which node owns
+		//which resource so a client can be created
+		//for each host on the cluster.
 	}
 	return cli, nil
 }

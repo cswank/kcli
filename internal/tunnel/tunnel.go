@@ -23,13 +23,10 @@ func (endpoint *Endpoint) String() string {
 	return fmt.Sprintf("%s:%d", endpoint.Host, endpoint.Port)
 }
 
-type getListener func(protocol, host string) (net.Listener, error)
-
 type connection struct {
 	local     string
 	sshServer string
 	remote    string
-	listen    getListener
 	cfg       *ssh.ClientConfig
 }
 
@@ -37,31 +34,16 @@ type Tunnel struct {
 	user    string
 	sshPort int
 	addrs   []string
-	listen  getListener
 }
 
-func New(user string, sshPort int, addrs []string, opts ...func(t *Tunnel)) *Tunnel {
+func New(user string, sshPort int, addrs []string) *Tunnel {
 	t := &Tunnel{
 		user:    user,
 		sshPort: sshPort,
 		addrs:   addrs,
 	}
 
-	for _, o := range opts {
-		o(t)
-	}
-
-	if t.listen == nil {
-		t.listen = net.Listen
-	}
-
 	return t
-}
-
-func Listen(f getListener) func(*Tunnel) {
-	return func(t *Tunnel) {
-		t.listen = f
-	}
 }
 
 //Connect creates an ssh tunnel for each address
@@ -131,7 +113,6 @@ func (t *Tunnel) doConnect(addr string) (string, string, error) {
 	}
 
 	c := connection{
-		listen:    t.listen,
 		sshServer: fmt.Sprintf("%s:%d", addrs[0], t.sshPort),
 		remote:    fmt.Sprintf("%s:%s", addrs[0], parts[1]),
 		local:     "127.0.0.1:",
@@ -154,18 +135,14 @@ func (t *Tunnel) doConnect(addr string) (string, string, error) {
 }
 
 func (c *connection) start() (string, error) {
-	fmt.Printf("starting connection %+v\n", c)
-	listener, err := c.listen("tcp", c.local)
-	fmt.Println("connected", listener, err)
+	listener, err := net.Listen("tcp", c.local)
 	if err != nil {
 		return "", err
 	}
 	//defer listener.Close()
 
 	go func(listener net.Listener) {
-		fmt.Println("about to accept")
 		conn, err := listener.Accept()
-		fmt.Println("listener accepted", conn, err)
 		if err != nil {
 			log.Fatal(err)
 		}

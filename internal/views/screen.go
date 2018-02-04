@@ -26,7 +26,7 @@ type coords struct {
 	y2 int
 }
 
-type Screen struct {
+type screen struct {
 	client *kafka.Client
 	g      *ui.Gui
 	view   string
@@ -44,11 +44,10 @@ type Screen struct {
 	searchChan   <-chan string
 	flashMessage chan<- string
 
-	//after is used by the C-p command
-	After func()
+	after func()
 }
 
-func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*stack) error) (*Screen, error) {
+func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*stack) error) (*screen, error) {
 	ch := make(chan string)
 	searchCh := make(chan string)
 	b, err := newBody(cli, width, height, ch, opts...)
@@ -56,7 +55,7 @@ func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*st
 		return nil, err
 	}
 
-	s := &Screen{
+	s := &screen{
 		client:       cli,
 		g:            g,
 		view:         "body",
@@ -76,7 +75,7 @@ func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*st
 	return s, nil
 }
 
-func (s *Screen) GetLayout(g *ui.Gui, width, height int) func(*ui.Gui) error {
+func (s *screen) getLayout(g *ui.Gui, width, height int) func(*ui.Gui) error {
 	ui.DefaultEditor = s.footer
 
 	return func(g *ui.Gui) error {
@@ -130,7 +129,7 @@ func getColors() (ui.Attribute, colors.Colorer, colors.Colorer, colors.Colorer) 
 	return bg, c1, c2, c3
 }
 
-func (s *Screen) locked(f func(g *ui.Gui, v *ui.View) error) func(g *ui.Gui, v *ui.View) error {
+func (s *screen) locked(f func(g *ui.Gui, v *ui.View) error) func(g *ui.Gui, v *ui.View) error {
 	return func(g *ui.Gui, v *ui.View) error {
 		if s.lock {
 			return nil
@@ -139,29 +138,29 @@ func (s *Screen) locked(f func(g *ui.Gui, v *ui.View) error) func(g *ui.Gui, v *
 	}
 }
 
-func (s *Screen) enter(g *ui.Gui, v *ui.View) error {
+func (s *screen) enter(g *ui.Gui, v *ui.View) error {
 	h, err := s.body.enter(g, v)
 	s.header.text = h
 	return err
 }
 
-func (s *Screen) escape(g *ui.Gui, v *ui.View) error {
+func (s *screen) escape(g *ui.Gui, v *ui.View) error {
 	h, err := s.body.escape(g, v)
 	s.header.text = h
 	return err
 }
 
-func (s *Screen) quit(g *ui.Gui, v *ui.View) error {
+func (s *screen) quit(g *ui.Gui, v *ui.View) error {
 	return ui.ErrQuit
 }
 
-func (s *Screen) jump(g *ui.Gui, v *ui.View) error {
+func (s *screen) jump(g *ui.Gui, v *ui.View) error {
 	s.view = "footer"
 	s.footer.enter(g, "jump")
 	return nil
 }
 
-func (s *Screen) offset(g *ui.Gui, v *ui.View) error {
+func (s *screen) offset(g *ui.Gui, v *ui.View) error {
 	_, ok := s.body.stack.top.(*topic)
 	if !ok {
 		s.flashMessage <- "you can only set the offset in a topic"
@@ -172,19 +171,19 @@ func (s *Screen) offset(g *ui.Gui, v *ui.View) error {
 	return nil
 }
 
-func (s *Screen) search(g *ui.Gui, v *ui.View) error {
+func (s *screen) search(g *ui.Gui, v *ui.View) error {
 	s.lock = true
 	s.view = "footer"
 	s.footer.enter(g, "search")
 	return nil
 }
 
-func (s *Screen) dump(g *ui.Gui, v *ui.View) error {
-	s.After = s.body.stack.top.print
+func (s *screen) dump(g *ui.Gui, v *ui.View) error {
+	s.after = s.body.stack.top.print
 	return ui.ErrQuit
 }
 
-func (s *Screen) doSearch() {
+func (s *screen) doSearch() {
 	for {
 		s.view = "body"
 		term := <-s.searchChan
@@ -219,17 +218,17 @@ func (s *Screen) doSearch() {
 	}
 }
 
-func (s *Screen) showHelp(g *ui.Gui, v *ui.View) error {
+func (s *screen) showHelp(g *ui.Gui, v *ui.View) error {
 	s.view = "help"
 	return s.help.show(g, v, s.keys)
 }
 
-func (s *Screen) hideHelp(g *ui.Gui, v *ui.View) error {
+func (s *screen) hideHelp(g *ui.Gui, v *ui.View) error {
 	s.view = "body"
 	return s.help.hide(g, v)
 }
 
-func (s *Screen) Keybindings(g *ui.Gui) error {
+func (s *screen) keybindings(g *ui.Gui) error {
 	for _, k := range s.keys {
 		for _, view := range k.views {
 			for _, kb := range k.keys {

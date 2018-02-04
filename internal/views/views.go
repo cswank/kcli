@@ -24,11 +24,11 @@ func NewGui(cli *kafka.Client, topic string, partition, offset int) error {
 		log.Fatalf("error: %s", err)
 	}
 
-	g.SetManagerFunc(s.GetLayout(g, w, h))
+	g.SetManagerFunc(s.getLayout(g, w, h))
 	g.Cursor = true
 	g.InputEsc = true
 
-	if err := s.Keybindings(g); err != nil {
+	if err := s.keybindings(g); err != nil {
 		return err
 	}
 
@@ -54,8 +54,8 @@ func NewGui(cli *kafka.Client, topic string, partition, offset int) error {
 
 	closed = true
 	g.Close()
-	if s.After != nil {
-		s.After()
+	if s.after != nil {
+		s.after()
 	}
 
 	return nil
