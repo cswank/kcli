@@ -57,7 +57,7 @@ var (
 	}
 )
 
-//GetBackgound sets the background color for the ui.
+//GetBackground sets the background color for the ui.
 func GetBackground(s string) ui.Attribute {
 	c, ok := background[s]
 	if !ok {

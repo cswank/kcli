@@ -30,12 +30,15 @@ type connection struct {
 	cfg       *ssh.ClientConfig
 }
 
+//Tunnel holds data needed to create one
+//ssh tunnel per host for port forwarding.
 type Tunnel struct {
 	user    string
 	sshPort int
 	addrs   []string
 }
 
+//New creates a new Tunnel
 func New(user string, sshPort int, addrs []string) *Tunnel {
 	t := &Tunnel{
 		user:    user,

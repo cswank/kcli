@@ -153,7 +153,7 @@ type searchResult struct {
 	error     error
 }
 
-//SearchTopic allows the caller to search accross all partitions in a topic.
+//SearchTopic allows the caller to search across all partitions in a topic.
 func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
 	ch := make(chan searchResult)
 	n := int64(len(partitions))

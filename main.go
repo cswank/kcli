@@ -16,7 +16,7 @@ import (
 
 var (
 	g         *ui.Gui
-	addrs     = kingpin.Flag("addresses", "comma seperated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
+	addrs     = kingpin.Flag("addresses", "comma separated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
 	logout    = kingpin.Flag("log", "for debugging, set the log output to a file").Short('l').String()
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()
 	partition = kingpin.Flag("partition", "go directly to a partition of a topic").Short('p').Default("-1").Int()
