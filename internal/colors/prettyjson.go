@@ -1,4 +1,3 @@
-//colors is Copied from https://github.com/hokaccha/go-prettyjson so I could make changes
 package colors
 
 import (
@@ -12,6 +11,7 @@ import (
 	"github.com/fatih/color"
 )
 
+//much of this code is from https://github.com/hokaccha/go-prettyjson so I could make changes.
 var (
 	colors = map[string]color.Attribute{
 		"black":   color.FgBlack,
@@ -102,17 +102,15 @@ func (f *Formatter) Format(data []byte) ([]byte, error) {
 func (f *Formatter) sprintfColor(c *color.Color, format string, args ...interface{}) string {
 	if f.DisabledColor || c == nil {
 		return fmt.Sprintf(format, args...)
-	} else {
-		return c.SprintfFunc()(format, args...)
 	}
+	return c.SprintfFunc()(format, args...)
 }
 
 func (f *Formatter) sprintColor(c *color.Color, s string) string {
 	if f.DisabledColor || c == nil {
 		return fmt.Sprint(s)
-	} else {
-		return c.SprintFunc()(s)
 	}
+	return c.SprintFunc()(s)
 }
 
 func (f *Formatter) pretty(v interface{}, depth int) string {

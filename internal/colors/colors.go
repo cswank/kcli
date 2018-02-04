@@ -57,6 +57,7 @@ var (
 	}
 )
 
+//GetBackgound sets the background color for the ui.
 func GetBackground(s string) ui.Attribute {
 	c, ok := background[s]
 	if !ok {
@@ -65,6 +66,7 @@ func GetBackground(s string) ui.Attribute {
 	return c
 }
 
+//Colorer wraps a string with ansi color escape codes.
 type Colorer func(string) string
 
 //Get fetches the colorer func for the given color

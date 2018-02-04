@@ -14,13 +14,13 @@ import (
 	"golang.org/x/crypto/ssh/agent"
 )
 
-type Endpoint struct {
+type endpoint struct {
 	Host string
 	Port int
 }
 
-func (endpoint *Endpoint) String() string {
-	return fmt.Sprintf("%s:%d", endpoint.Host, endpoint.Port)
+func (e *endpoint) String() string {
+	return fmt.Sprintf("%s:%d", e.Host, e.Port)
 }
 
 type connection struct {

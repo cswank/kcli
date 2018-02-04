@@ -9,6 +9,8 @@ import (
 	ui "github.com/jroimartin/gocui"
 )
 
+//NewGui creates the command line user inferface and
+//keybindings.
 func NewGui(cli *kafka.Client, topic string, partition, offset int) error {
 	g, err := ui.NewGui(ui.Output256)
 	if err != nil {
