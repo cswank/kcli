@@ -40,10 +40,11 @@ type Message struct {
 }
 
 //New returns a kafka Client.
-func New(addrs []string, tun *tunnel.Tunnel) (*Client, error) {
-	if tun != nil {
+func New(addrs []string, user string, port int) (*Client, error) {
+	if user != "" {
+		t := tunnel.New(user, port, addrs)
 		var err error
-		addrs, err = tun.Connect()
+		addrs, err = t.Connect()
 		//TODO: figure out which node owns
 		//which resource so a client can be created
 		//for each host on the cluster.

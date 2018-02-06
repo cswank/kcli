@@ -7,7 +7,6 @@ import (
 	"strings"
 
 	"github.com/cswank/kcli/internal/kafka"
-	"github.com/cswank/kcli/internal/tunnel"
 	"github.com/cswank/kcli/internal/views"
 
 	ui "github.com/jroimartin/gocui"
@@ -32,12 +31,7 @@ func init() {
 }
 
 func connect() *kafka.Client {
-	a := getAddresses(*addrs)
-	var t *tunnel.Tunnel
-	if *ssh != "" {
-		t = tunnel.New(*ssh, *sshPort, a)
-	}
-	cli, err := kafka.New(a, t)
+	cli, err := kafka.New(getAddresses(*addrs), *ssh, *sshPort)
 	if err != nil {
 		log.Fatal(err)
 	}
