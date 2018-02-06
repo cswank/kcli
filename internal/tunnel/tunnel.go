@@ -39,14 +39,12 @@ type Tunnel struct {
 }
 
 //New creates a new Tunnel
-func New(user string, sshPort int, addrs []string) *Tunnel {
-	t := &Tunnel{
+func New(user string, port int, addrs []string) *Tunnel {
+	return &Tunnel{
 		user:    user,
-		sshPort: sshPort,
+		sshPort: port,
 		addrs:   addrs,
 	}
-
-	return t
 }
 
 //Connect creates an ssh tunnel for each address

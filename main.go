@@ -32,16 +32,12 @@ func init() {
 }
 
 func connect() *kafka.Client {
-	a, tun, err := getAddresses(*addrs)
-	if err != nil {
-		log.Fatal(err)
+	a := getAddresses(*addrs)
+	var t *tunnel.Tunnel
+	if *ssh != "" {
+		t = tunnel.New(*ssh, *sshPort, a)
 	}
-
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	cli, err := kafka.New(a, tun)
+	cli, err := kafka.New(a, t)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -75,21 +71,11 @@ func setLogout() {
 	}
 }
 
-func getAddresses(addrs []string) ([]string, bool, error) {
-	var tun bool
+func getAddresses(addrs []string) []string {
 	var out []string
 	for _, addr := range addrs {
 		out = append(out, strings.Split(addr, ",")...)
 	}
 
-	if *ssh != "" {
-		tun = true
-		t := tunnel.New(*ssh, *sshPort, out)
-		var err error
-		if out, err = t.Connect(); err != nil {
-			return nil, false, err
-		}
-	}
-
-	return out, tun, nil
+	return out
 }

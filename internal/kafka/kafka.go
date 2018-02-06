@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/cswank/kcli/internal/tunnel"
 )
 
 //Client fetches from kafka
@@ -39,7 +40,18 @@ type Message struct {
 }
 
 //New returns a kafka Client.
-func New(addrs []string, tunnel bool) (*Client, error) {
+func New(addrs []string, tun *tunnel.Tunnel) (*Client, error) {
+	if tun != nil {
+		var err error
+		addrs, err = tun.Connect()
+		//TODO: figure out which node owns
+		//which resource so a client can be created
+		//for each host on the cluster.
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	s, err := sarama.NewClient(addrs, nil)
 	if err != nil {
 		return nil, err
@@ -50,11 +62,6 @@ func New(addrs []string, tunnel bool) (*Client, error) {
 		addrs:  addrs,
 	}
 
-	if tunnel {
-		//TODO: figure out which node owns
-		//which resource so a client can be created
-		//for each host on the cluster.
-	}
 	return cli, nil
 }
 
