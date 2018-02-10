@@ -2,8 +2,11 @@ package kafka
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -14,6 +17,10 @@ import (
 type Client struct {
 	addrs  []string
 	sarama sarama.Client
+
+	//when using ssh tunnels to connect
+	hosts map[string]map[int32]string
+	lock  sync.Mutex
 }
 
 //Partition holds information about a kafka partition
@@ -41,6 +48,7 @@ type Message struct {
 
 //New returns a kafka Client.
 func New(addrs []string, user string, port int) (*Client, error) {
+	var hosts map[string]map[int32]string
 	if user != "" {
 		t := tunnel.New(user, port, addrs)
 		var err error
@@ -48,6 +56,7 @@ func New(addrs []string, user string, port int) (*Client, error) {
 		//TODO: figure out which node owns
 		//which resource so a client can be created
 		//for each host on the cluster.
+		hosts = make(map[string]map[int32]string)
 		if err != nil {
 			return nil, err
 		}
@@ -61,9 +70,62 @@ func New(addrs []string, user string, port int) (*Client, error) {
 	cli := &Client{
 		sarama: s,
 		addrs:  addrs,
+		hosts:  hosts,
+	}
+
+	if user != "" {
+		go cli.findLeaders(addrs)
 	}
 
 	return cli, nil
+}
+
+func (c *Client) findLeaders(addrs []string) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	topics, err := c.sarama.Topics()
+	if err != nil {
+		if err != nil {
+			log.Println("couldn't get topics")
+			return
+		}
+	}
+
+	for _, t := range topics {
+		partitions, err := c.sarama.Partitions(t)
+		if err != nil {
+			log.Println("couldn't get partitions for topics", t, err)
+			return
+		}
+		for _, p := range partitions {
+			l, err := c.sarama.Leader(t, p)
+			if err != nil {
+				log.Printf("couldn't get leader for topic %s, partition %d: %s", t, p, err)
+				return
+			}
+
+			addr := l.Addr()
+			parts := strings.Split(addr, ":")
+			var found string
+			for _, a := range addrs {
+				if strings.Index(a, parts[0]) == 0 {
+					found = a
+				}
+			}
+
+			if found == "" {
+				log.Println("couldn't find a match address")
+				return
+			}
+			m, ok := c.hosts[t]
+			if !ok {
+				m = map[int32]string{}
+			}
+			m[p] = found
+			c.hosts[t] = m
+		}
+	}
 }
 
 //GetTopics gets topics (duh)
@@ -104,7 +166,22 @@ func (c *Client) GetTopic(topic string) ([]Partition, error) {
 //GetPartition fetches a kafka partition.  It includes a callback func
 //so that the caller can tell it when to stop consuming.
 func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]Message, error) {
-	consumer, err := sarama.NewConsumer(c.addrs, nil)
+	var consumer sarama.Consumer
+	var err error
+	if c.hosts == nil {
+		consumer, err = sarama.NewConsumer(c.addrs, nil)
+	} else {
+		c.lock.Lock()
+		addr, ok := c.hosts[part.Topic][part.Partition]
+		if !ok {
+			c.lock.Unlock()
+			return nil, fmt.Errorf("couldn't find address for topic %s and partition %d", part.Topic, part.Partition)
+		}
+
+		consumer, err = sarama.NewConsumer([]string{addr}, nil)
+		c.lock.Unlock()
+	}
+
 	if err != nil {
 		return nil, err
 	}
