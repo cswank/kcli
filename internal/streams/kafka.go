@@ -1,19 +1,26 @@
-package kafka
+package streams
 
 import (
 	"encoding/json"
+	"fmt"
+	"log"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/cswank/kcli/internal/tunnel"
 )
 
-//Client fetches from kafka
-type Client struct {
+//KafkaClient fetches from kafka
+type KafkaClient struct {
 	addrs  []string
 	sarama sarama.Client
+
+	//when using ssh tunnels to connect
+	hosts map[string]map[int32]string
+	lock  sync.Mutex
 }
 
 //Partition holds information about a kafka partition
@@ -24,6 +31,10 @@ type Partition struct {
 	End       int64  `json:"end"`
 	Offset    int64  `json:"offset"`
 	Filter    string `json:"filter"`
+
+	//stuff for kinesis
+	id     *string
+	stream *string
 }
 
 //String turns a partition into a string
@@ -39,8 +50,9 @@ type Message struct {
 	Offset    int64     `json:"offset"`
 }
 
-//New returns a kafka Client.
-func New(addrs []string, user string, port int) (*Client, error) {
+//NewKafka returns a kafka Client.
+func NewKafka(addrs []string, user string, port int) (*KafkaClient, error) {
+	var hosts map[string]map[int32]string
 	if user != "" {
 		t := tunnel.New(user, port, addrs)
 		var err error
@@ -48,6 +60,7 @@ func New(addrs []string, user string, port int) (*Client, error) {
 		//TODO: figure out which node owns
 		//which resource so a client can be created
 		//for each host on the cluster.
+		hosts = make(map[string]map[int32]string)
 		if err != nil {
 			return nil, err
 		}
@@ -58,21 +71,74 @@ func New(addrs []string, user string, port int) (*Client, error) {
 		return nil, err
 	}
 
-	cli := &Client{
+	cli := &KafkaClient{
 		sarama: s,
 		addrs:  addrs,
+		hosts:  hosts,
+	}
+
+	if user != "" {
+		go cli.findLeaders(addrs)
 	}
 
 	return cli, nil
 }
 
+func (c *KafkaClient) findLeaders(addrs []string) {
+	c.lock.Lock()
+	defer c.lock.Unlock()
+
+	topics, err := c.sarama.Topics()
+	if err != nil {
+		if err != nil {
+			log.Println("couldn't get topics")
+			return
+		}
+	}
+
+	for _, t := range topics {
+		partitions, err := c.sarama.Partitions(t)
+		if err != nil {
+			log.Println("couldn't get partitions for topics", t, err)
+			return
+		}
+		for _, p := range partitions {
+			l, err := c.sarama.Leader(t, p)
+			if err != nil {
+				log.Printf("couldn't get leader for topic %s, partition %d: %s", t, p, err)
+				return
+			}
+
+			addr := l.Addr()
+			parts := strings.Split(addr, ":")
+			var found string
+			for _, a := range addrs {
+				if strings.Index(a, parts[0]) == 0 {
+					found = a
+				}
+			}
+
+			if found == "" {
+				log.Println("couldn't find a match address")
+				return
+			}
+			m, ok := c.hosts[t]
+			if !ok {
+				m = map[int32]string{}
+			}
+			m[p] = found
+			c.hosts[t] = m
+		}
+	}
+}
+
 //GetTopics gets topics (duh)
-func (c *Client) GetTopics() ([]string, error) {
+func (c *KafkaClient) GetTopics() ([]string, error) {
 	return c.sarama.Topics()
 }
 
 //GetTopic gets a single kafka topic
-func (c *Client) GetTopic(topic string) ([]Partition, error) {
+func (c *KafkaClient) GetTopic(topic string) ([]Partition, error) {
 	partitions, err := c.sarama.Partitions(topic)
 	if err != nil {
 		return nil, err
@@ -103,8 +169,23 @@ func (c *Client) GetTopic(topic string) ([]Partition, error) {
 
 //GetPartition fetches a kafka partition.  It includes a callback func
 //so that the caller can tell it when to stop consuming.
-func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]Message, error) {
-	consumer, err := sarama.NewConsumer(c.addrs, nil)
+func (c *KafkaClient) GetPartition(part Partition, end int, f func([]byte) bool) ([]Message, error) {
+	var consumer sarama.Consumer
+	var err error
+	if c.hosts == nil {
+		consumer, err = sarama.NewConsumer(c.addrs, nil)
+	} else {
+		c.lock.Lock()
+		addr, ok := c.hosts[part.Topic][part.Partition]
+		if !ok {
+			c.lock.Unlock()
+			return nil, fmt.Errorf("couldn't find address for topic %s and partition %d", part.Topic, part.Partition)
+		}
+
+		consumer, err = sarama.NewConsumer([]string{addr}, nil)
+		c.lock.Unlock()
+	}
+
 	if err != nil {
 		return nil, err
 	}
@@ -151,7 +232,7 @@ func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]M
 }
 
 //Close disconnects from kafka
-func (c *Client) Close() {
+func (c *KafkaClient) Close() {
 	c.sarama.Close()
 }
 
@@ -162,7 +243,7 @@ type searchResult struct {
 }
 
 //SearchTopic allows the caller to search across all partitions in a topic.
-func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
+func (c *KafkaClient) SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
 	ch := make(chan searchResult)
 	n := int64(len(partitions))
 	var stop bool
@@ -209,7 +290,7 @@ func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool,
 	return results, nil
 }
 
-func (c *Client) search(info Partition, s string, stop func() bool, cb func(int64, int64)) (int64, error) {
+func (c *KafkaClient) search(info Partition, s string, stop func() bool, cb func(int64, int64)) (int64, error) {
 	n := int64(-1)
 	var i int64
 	err := c.consume(info, info.End, func(msg string) bool {
@@ -227,19 +308,19 @@ func (c *Client) search(info Partition, s string, stop func() bool, cb func(int6
 
 //Search is for searching for a string in a single kafka partition.
 //It stops at the first match.
-func (c *Client) Search(info Partition, s string, cb func(i, j int64)) (int64, error) {
+func (c *KafkaClient) Search(info Partition, s string, cb func(i, j int64)) (int64, error) {
 	return c.search(info, s, func() bool { return false }, cb)
 }
 
 //Fetch gets all messages in a partition up intil the 'end' offset.
-func (c *Client) Fetch(info Partition, end int64, cb func(string)) error {
+func (c *KafkaClient) Fetch(info Partition, end int64, cb func(string)) error {
 	return c.consume(info, end, func(s string) bool {
 		cb(s)
 		return false
 	})
 }
 
-func (c *Client) consume(info Partition, end int64, cb func(string) bool) error {
+func (c *KafkaClient) consume(info Partition, end int64, cb func(string) bool) error {
 	consumer, err := sarama.NewConsumer(c.addrs, nil)
 	if err != nil {
 		return err

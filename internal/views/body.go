@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"strings"
 
-	"github.com/cswank/kcli/internal/kafka"
+	"github.com/cswank/kcli/internal/streams"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -25,7 +25,7 @@ type body struct {
 	view         *ui.View
 }
 
-func newBody(cli *kafka.Client, w, h int, flashMessage chan string, opts ...func(*stack) error) (*body, error) {
+func newBody(cli streams.Streamer, w, h int, flashMessage chan string, opts ...func(*stack) error) (*body, error) {
 	r, err := newRoot(cli, w, h-2, flashMessage)
 	if err != nil {
 		return nil, err

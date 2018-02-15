@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/cswank/kcli/internal/colors"
-	"github.com/cswank/kcli/internal/kafka"
+	"github.com/cswank/kcli/internal/streams"
 	ui "github.com/jroimartin/gocui"
 )
 
@@ -27,7 +27,7 @@ type coords struct {
 }
 
 type screen struct {
-	client *kafka.Client
+	client streams.Streamer
 	g      *ui.Gui
 	view   string
 	height int
@@ -47,7 +47,7 @@ type screen struct {
 	after func()
 }
 
-func newScreen(cli *kafka.Client, g *ui.Gui, width, height int, opts ...func(*stack) error) (*screen, error) {
+func newScreen(cli streams.Streamer, g *ui.Gui, width, height int, opts ...func(*stack) error) (*screen, error) {
 	ch := make(chan string)
 	searchCh := make(chan string)
 	b, err := newBody(cli, width, height, ch, opts...)

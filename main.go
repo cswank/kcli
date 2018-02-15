@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/cswank/kcli/internal/kafka"
+	"github.com/cswank/kcli/internal/streams"
 	"github.com/cswank/kcli/internal/views"
 
 	ui "github.com/jroimartin/gocui"
@@ -30,8 +30,9 @@ func init() {
 	kingpin.Parse()
 }
 
-func connect() *kafka.Client {
-	cli, err := kafka.New(getAddresses(*addrs), *ssh, *sshPort)
+func connect() streams.Streamer {
+	//cli, err := streams.NewKafka(getAddresses(*addrs), *ssh, *sshPort)
+	cli, err := streams.NewKinesis("us-west-2")
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -9,7 +9,7 @@ import (
 	"sort"
 
 	"github.com/cswank/kcli/internal/colors"
-	"github.com/cswank/kcli/internal/kafka"
+	"github.com/cswank/kcli/internal/streams"
 )
 
 //feeder feeds the screen the data that it craves
@@ -25,7 +25,7 @@ type feeder interface {
 }
 
 type root struct {
-	cli          *kafka.Client
+	cli          streams.Streamer
 	width        int
 	height       int
 	topics       []string
@@ -34,7 +34,7 @@ type root struct {
 	flashMessage chan<- string
 }
 
-func newRoot(cli *kafka.Client, width, height int, flashMessage chan<- string) (*root, error) {
+func newRoot(cli streams.Streamer, width, height int, flashMessage chan<- string) (*root, error) {
 	topics, err := cli.GetTopics()
 	if len(topics) == 0 {
 		return nil, fmt.Errorf("no topics found in kafka")
@@ -93,19 +93,19 @@ func (r *root) header() string {
 }
 
 type topic struct {
-	cli    *kafka.Client
+	cli    streams.Streamer
 	height int
 	width  int
 	offset int
 
 	topic        string
-	partitions   []kafka.Partition
+	partitions   []streams.Partition
 	fmt          string
 	enteredAt    int
 	flashMessage chan<- string
 }
 
-func newTopic(cli *kafka.Client, t string, width, height int, flashMessage chan<- string) (feeder, error) {
+func newTopic(cli streams.Streamer, t string, width, height int, flashMessage chan<- string) (feeder, error) {
 	partitions, err := cli.GetTopic(t)
 	return &topic{
 		cli:          cli,
@@ -217,18 +217,18 @@ func (t *topic) print() {
 }
 
 type partition struct {
-	cli          *kafka.Client
+	cli          streams.Streamer
 	height       int
 	width        int
-	partition    kafka.Partition
-	rows         []kafka.Message
+	partition    streams.Partition
+	rows         []streams.Message
 	enteredAt    int
 	fmt          string
 	pg           int
 	flashMessage chan<- string
 }
 
-func newPartition(cli *kafka.Client, p kafka.Partition, width, height int, flashMessage chan<- string) (feeder, error) {
+func newPartition(cli streams.Streamer, p streams.Partition, width, height int, flashMessage chan<- string) (feeder, error) {
 	rows, err := cli.GetPartition(p, height, func(_ []byte) bool { return true })
 	return &partition{
 		cli:          cli,
@@ -329,14 +329,14 @@ func (p *partition) print() {
 type message struct {
 	height       int
 	width        int
-	msg          kafka.Message
+	msg          streams.Message
 	enteredAt    int
 	body         []string
 	pg           int
 	flashMessage chan<- string
 }
 
-func newMessage(msg kafka.Message, width, height int, flashMessage chan<- string) (feeder, error) {
+func newMessage(msg streams.Message, width, height int, flashMessage chan<- string) (feeder, error) {
 	buf, err := prettyMessage(msg.Value)
 	if err != nil {
 		return nil, err
