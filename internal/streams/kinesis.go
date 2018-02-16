@@ -39,7 +39,7 @@ func (k *KinesisClient) GetTopic(streamName string) ([]Partition, error) {
 
 	out := make([]Partition, len(resp.StreamDescription.Shards))
 	for i, s := range resp.StreamDescription.Shards {
-		out[i] = Partition{id: s.ShardId, stream: aws.String(streamName), Topic: streamName, Partition: int32(i)}
+		out[i] = Partition{id: s.ShardId, stream: aws.String(streamName), Topic: streamName, Partition: int32(i), Start: 0, End: 2}
 		//r := s.SequenceNumberRange
 		log.Printf("%v\n", s)
 	}
@@ -66,6 +66,8 @@ func (k *KinesisClient) GetPartition(partition Partition, rows int, cb func(reco
 		ShardIterator: i.ShardIterator,
 		Limit:         aws.Int64(int64(rows)),
 	})
+
+	log.Println("records", records.Records, err)
 
 	if err != nil {
 		return nil, err

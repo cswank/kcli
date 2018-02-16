@@ -32,7 +32,7 @@ func init() {
 
 func connect() streams.Streamer {
 	//cli, err := streams.NewKafka(getAddresses(*addrs), *ssh, *sshPort)
-	cli, err := streams.NewKinesis("us-west-2")
+	cli, err := streams.NewKinesis("us-east-2")
 	if err != nil {
 		log.Fatal(err)
 	}
