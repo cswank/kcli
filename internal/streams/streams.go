@@ -1,6 +1,7 @@
 package streams
 
 type Streamer interface {
+	Source() string
 	GetTopics() ([]string, error)
 	GetTopic(topic string) ([]Partition, error)
 	SearchTopic(partitions []Partition, term string, firstResult bool, cb func(int64, int64)) ([]Partition, error)

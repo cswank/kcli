@@ -6,7 +6,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"sort"
+	"time"
 
 	"github.com/cswank/kcli/internal/colors"
 	"github.com/cswank/kcli/internal/streams"
@@ -19,7 +21,7 @@ type feeder interface {
 	page(page int) error
 	header() string
 	enter(row int) (feeder, error)
-	jump(i int64) error
+	jump(i int64, s string) error
 	search(s string, cb func(int64, int64)) (int64, error)
 	row() int
 }
@@ -83,7 +85,7 @@ func (r *root) enter(row int) (feeder, error) {
 	return newTopic(r.cli, r.topics[row], r.width, r.height, r.flashMessage)
 }
 
-func (r *root) jump(_ int64) error                                   { return nil }
+func (r *root) jump(_ int64, _ string) error                         { return nil }
 func (r *root) search(_ string, _ func(int64, int64)) (int64, error) { return -1, nil }
 
 func (r *root) row() int { return r.enteredAt }
@@ -128,7 +130,7 @@ func (t *topic) search(s string, cb func(int64, int64)) (int64, error) {
 	return int64(len(results)), nil
 }
 
-func (t *topic) jump(i int64) error {
+func (t *topic) jump(i int64, s string) error {
 	if int(i) >= len(t.partitions) || int(i) < 0 {
 		t.flashMessage <- "nothing to see here"
 		return nil
@@ -247,16 +249,23 @@ func (p *partition) search(s string, cb func(int64, int64)) (int64, error) {
 		return i, err
 	}
 
-	return i, p.jump(i)
+	return i, p.jump(i, "")
 }
 
-func (p *partition) jump(i int64) error {
-	if i >= p.partition.End {
-		return nil
-	}
+func (p *partition) jump(i int64, d string) error {
+	if d == "s" {
+		s := fmt.Sprintf("-%ds", i)
+		d, _ := time.ParseDuration(s)
+		ts := time.Now().Add(d)
+		p.partition.After = &ts
+	} else {
+		if i >= p.partition.End {
+			return nil
+		}
 
-	p.pg = int(i) / p.height
-	p.partition.Offset = i
+		p.pg = int(i) / p.height
+		p.partition.Offset = i
+	}
 	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
 	if err != nil {
 		return err
@@ -291,18 +300,26 @@ func (p *partition) getRows() ([]string, error) {
 }
 
 func (p *partition) page(pg int) error {
-	if p.pg == 0 && pg < 0 && p.partition.Offset == p.partition.Start {
-		return nil
-	} else if p.pg == 0 && pg < 0 && p.partition.Offset > p.partition.Start {
-		pg = 0
+	if source == "kafka" {
+		if p.pg == 0 && pg < 0 && p.partition.Offset == p.partition.Start {
+			return nil
+		} else if p.pg == 0 && pg < 0 && p.partition.Offset > p.partition.Start {
+			pg = 0
+		}
+
+		o := int64((p.pg+pg)*p.height) + p.partition.Start
+		if o >= p.partition.End {
+			return nil
+		}
+		p.partition.Offset = o
+	} else {
+		m := p.rows[len(p.rows)-1]
+		p.partition.After = nil
+		p.partition.SequenceNumber = m.SequenceNumber
+		log.Println("sq:", *p.partition.SequenceNumber)
 	}
 
-	o := int64((p.pg+pg)*p.height) + p.partition.Start
-	if o >= p.partition.End {
-		return nil
-	}
 	p.pg += pg
-	p.partition.Offset = o
 	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
 	if err != nil {
 		return err
@@ -365,7 +382,7 @@ func (m *message) print() {
 
 func (m *message) search(_ string, _ func(int64, int64)) (int64, error) { return -1, nil }
 
-func (m *message) jump(_ int64) error { return nil }
+func (m *message) jump(_ int64, _ string) error { return nil }
 
 func (m *message) row() int { return m.enteredAt }
 

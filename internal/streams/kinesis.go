@@ -9,13 +9,16 @@ import (
 )
 
 type KinesisClient struct {
-	cli *kinesis.Kinesis
+	cli         *kinesis.Kinesis
+	first, last string
 }
 
 func NewKinesis(region string) (*KinesisClient, error) {
 	c := kinesis.New(session.New(&aws.Config{Region: aws.String(region)}))
 	return &KinesisClient{cli: c}, nil
 }
+
+func (k *KinesisClient) Source() string { return "kinesis" }
 
 func (k *KinesisClient) GetTopics() ([]string, error) {
 	resp, err := k.cli.ListStreams(nil)
@@ -41,7 +44,6 @@ func (k *KinesisClient) GetTopic(streamName string) ([]Partition, error) {
 	for i, s := range resp.StreamDescription.Shards {
 		out[i] = Partition{id: s.ShardId, stream: aws.String(streamName), Topic: streamName, Partition: int32(i), Start: 0, End: 2}
 		//r := s.SequenceNumberRange
-		log.Printf("%v\n", s)
 	}
 
 	return out, nil
@@ -52,11 +54,29 @@ func (k *KinesisClient) SearchTopic(partitions []Partition, term string, firstRe
 }
 
 func (k *KinesisClient) GetPartition(partition Partition, rows int, cb func(record []byte) bool) ([]Message, error) {
-	x, err := k.cli.GetShardIterator(&kinesis.GetShardIteratorInput{
-		ShardId:           partition.id,
-		ShardIteratorType: aws.String("TRIM_HORIZON"),
-		StreamName:        partition.stream,
-	})
+	var ii *kinesis.GetShardIteratorInput
+	if partition.After != nil {
+		ii = &kinesis.GetShardIteratorInput{
+			ShardId:           partition.id,
+			ShardIteratorType: aws.String("AT_TIMESTAMP"),
+			StreamName:        partition.stream,
+			Timestamp:         partition.After,
+		}
+	} else if partition.SequenceNumber != nil {
+		ii = &kinesis.GetShardIteratorInput{
+			ShardId:                partition.id,
+			ShardIteratorType:      aws.String("AFTER_SEQUENCE_NUMBER"),
+			StreamName:             partition.stream,
+			StartingSequenceNumber: partition.SequenceNumber,
+		}
+	} else {
+		ii = &kinesis.GetShardIteratorInput{
+			ShardId:           partition.id,
+			ShardIteratorType: aws.String("TRIM_HORIZON"),
+			StreamName:        partition.stream,
+		}
+	}
+	x, err := k.cli.GetShardIterator(ii)
 	if err != nil {
 		return nil, err
 	}
@@ -75,6 +95,8 @@ func (k *KinesisClient) GetPartition(partition Partition, rows int, cb func(reco
 			ShardIterator: iter,
 			Limit:         aws.Int64(limit),
 		})
+
+		log.Printf("got %d records, err: %v", len(records.Records), err)
 		if err != nil {
 			return nil, err
 		}
@@ -83,17 +105,17 @@ func (k *KinesisClient) GetPartition(partition Partition, rows int, cb func(reco
 		}
 
 		for _, r := range records.Records {
-			log.Println(r)
 			out = append(out, Message{
-				Partition: partition,
-				Value:     r.Data,
-				Offset:    int64(i),
+				Partition:      partition,
+				Value:          r.Data,
+				Offset:         int64(i),
+				Timestamp:      r.ApproximateArrivalTimestamp,
+				SequenceNumber: r.SequenceNumber,
 			})
 			i++
 		}
 		iter = records.NextShardIterator
 	}
-
 	return out, nil
 }
 

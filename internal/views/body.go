@@ -140,11 +140,11 @@ func (b *body) back(g *ui.Gui, v *ui.View) error {
 	return v.SetCursor(0, 0)
 }
 
-func (b *body) jump(i int64) error {
+func (b *body) jump(i int64, d string) error {
 	if err := b.view.SetCursor(0, 0); err != nil {
 		return err
 	}
-	return b.stack.top.jump(i)
+	return b.stack.top.jump(i, d)
 }
 
 func (b *body) search(s string, cb func(int64, int64)) (int64, error) {
