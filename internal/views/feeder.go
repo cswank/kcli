@@ -293,7 +293,7 @@ func (p *partition) jump(i int64, d string) error {
 	if err != nil {
 		return err
 	}
-	p.rows = rows
+	p.stack.add(rows)
 	return nil
 }
 
@@ -333,27 +333,57 @@ func (p *partition) page(pg int) error {
 }
 
 func (p *partition) pageKafka(pg int) error {
-	return nil
+	if p.pg == 0 && pg < 0 && p.partition.Offset == p.partition.Start {
+		return nil
+	} else if p.pg == 0 && pg < 0 && p.partition.Offset > p.partition.Start {
+		pg = 0
+	}
+
+	o := int64((p.pg+pg)*p.height) + p.partition.Start
+	if o >= p.partition.End {
+		return nil
+	}
+	p.pg += pg
+	p.partition.Offset = o
+	return p.doPage()
 }
 
 func (p *partition) pageKinesis(pg int) error {
-	rows := p.stack.top()
-	var m streams.Message
-	if pg == -1 {
-		p.partition.After = nil
-		p.partition.SequenceNumber = m.SequenceNumber
-	} else {
-		m = rows[len(rows)-1]
+	if pg == -1 && p.pg == 0 {
+		return nil
 	}
+
+	p.pg += pg
+	if pg == -1 {
+		p.stack.pop()
+		return nil
+	}
+
+	rows := p.stack.top
+	m := rows[len(rows)-1]
+	p.partition.After = nil
+	p.partition.SequenceNumber = m.SequenceNumber
+	return p.doPage()
+}
+
+func (p *partition) doPage() error {
+	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
+	if err != nil {
+		return err
+	}
+
+	p.stack.add(rows)
+	return nil
 }
 
 func (p *partition) enter(row int) (feeder, error) {
-	if row >= len(p.rows) {
+	rows := p.stack.top
+	if row >= len(rows) {
 		go func() { p.flashMessage <- "nothing to see here" }()
 		return nil, errNoData
 	}
 	p.enteredAt = row
-	return newMessage(p.rows[row], p.width, p.height, p.flashMessage)
+	return newMessage(rows[row], p.width, p.height, p.flashMessage)
 }
 
 func (p *partition) print() {
