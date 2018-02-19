@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"sort"
 	"time"
 
@@ -218,12 +217,36 @@ func (t *topic) print() {
 	}
 }
 
+type messageStack struct {
+	top   []streams.Message
+	stack [][]streams.Message
+}
+
+func newMessageStack(rows []streams.Message) messageStack {
+	return messageStack{top: rows, stack: [][]streams.Message{rows}}
+}
+
+func (s *messageStack) add(rows []streams.Message) {
+	s.top = rows
+	s.stack = append(s.stack, rows)
+}
+
+func (s *messageStack) pop() {
+	if len(s.stack) == 1 {
+		return
+	}
+
+	i := len(s.stack) - 1
+	s.stack = s.stack[0:i]
+	s.top = s.stack[len(s.stack)-1]
+}
+
 type partition struct {
 	cli          streams.Streamer
 	height       int
 	width        int
 	partition    streams.Partition
-	rows         []streams.Message
+	stack        messageStack
 	enteredAt    int
 	fmt          string
 	pg           int
@@ -237,7 +260,7 @@ func newPartition(cli streams.Streamer, p streams.Partition, width, height int, 
 		width:        width,
 		height:       height,
 		partition:    p,
-		rows:         rows,
+		stack:        newMessageStack(rows),
 		fmt:          "%-12d %s",
 		flashMessage: flashMessage,
 	}, err
@@ -287,8 +310,10 @@ func (p *partition) header() string {
 }
 
 func (p *partition) getRows() ([]string, error) {
-	out := make([]string, len(p.rows))
-	for i, msg := range p.rows {
+	rows := p.stack.top
+
+	out := make([]string, len(rows))
+	for i, msg := range rows {
 		end := p.width
 		if len(msg.Value) < end {
 			end = len(msg.Value)
@@ -301,31 +326,25 @@ func (p *partition) getRows() ([]string, error) {
 
 func (p *partition) page(pg int) error {
 	if source == "kafka" {
-		if p.pg == 0 && pg < 0 && p.partition.Offset == p.partition.Start {
-			return nil
-		} else if p.pg == 0 && pg < 0 && p.partition.Offset > p.partition.Start {
-			pg = 0
-		}
+		return p.pageKafka(pg)
+	}
 
-		o := int64((p.pg+pg)*p.height) + p.partition.Start
-		if o >= p.partition.End {
-			return nil
-		}
-		p.partition.Offset = o
-	} else {
-		m := p.rows[len(p.rows)-1]
+	return p.pageKinesis(pg)
+}
+
+func (p *partition) pageKafka(pg int) error {
+	return nil
+}
+
+func (p *partition) pageKinesis(pg int) error {
+	rows := p.stack.top()
+	var m streams.Message
+	if pg == -1 {
 		p.partition.After = nil
 		p.partition.SequenceNumber = m.SequenceNumber
-		log.Println("sq:", *p.partition.SequenceNumber)
+	} else {
+		m = rows[len(rows)-1]
 	}
-
-	p.pg += pg
-	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
-	if err != nil {
-		return err
-	}
-	p.rows = rows
-	return nil
 }
 
 func (p *partition) enter(row int) (feeder, error) {

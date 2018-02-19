@@ -45,16 +45,14 @@ func writeKinesis(region string) {
 
 	i := int64(2)
 	for topic, tpl := range topics {
-		out, err := kc.CreateStream(&kinesis.CreateStreamInput{
+		_, err := kc.CreateStream(&kinesis.CreateStreamInput{
 			ShardCount: aws.Int64(i),
 			StreamName: aws.String(topic),
 		})
 
 		if err != nil {
-			log.Fatal(err)
+			log.Println(err)
 		}
-		fmt.Printf("%v\n", out)
-
 		if err := kc.WaitUntilStreamExists(&kinesis.DescribeStreamInput{StreamName: aws.String(topic)}); err != nil {
 			log.Fatal(err)
 		}
