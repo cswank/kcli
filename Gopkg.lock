@@ -20,6 +20,12 @@
   revision = "2efee857e7cfd4f3d0138cc3cbb1b4966962b93a"
 
 [[projects]]
+  name = "github.com/aws/aws-sdk-go"
+  packages = ["aws","aws/awserr","aws/awsutil","aws/client","aws/client/metadata","aws/corehandlers","aws/credentials","aws/credentials/ec2rolecreds","aws/credentials/endpointcreds","aws/credentials/stscreds","aws/defaults","aws/ec2metadata","aws/endpoints","aws/request","aws/session","aws/signer/v4","internal/sdkio","internal/sdkrand","internal/shareddefaults","private/protocol","private/protocol/json/jsonutil","private/protocol/jsonrpc","private/protocol/query","private/protocol/query/queryutil","private/protocol/rest","private/protocol/xml/xmlutil","service/kinesis","service/sqs","service/sts"]
+  revision = "854f9d07a932452f1552955e127e50ba5ebb25cc"
+  version = "v1.13.56"
+
+[[projects]]
   branch = "master"
   name = "github.com/benburkert/dns"
   packages = ["."]
@@ -56,10 +62,21 @@
   version = "v1.5.0"
 
 [[projects]]
+  name = "github.com/go-ini/ini"
+  packages = ["."]
+  revision = "06f5f3d67269ccec1fe5fe4134ba6e982984f7f5"
+  version = "v1.37.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/snappy"
   packages = ["."]
   revision = "553a641470496b2327abcac10b36396bd98e45c9"
+
+[[projects]]
+  name = "github.com/jmespath/go-jmespath"
+  packages = ["."]
+  revision = "0b12d6b5"
 
 [[projects]]
   name = "github.com/jroimartin/gocui"
@@ -121,6 +138,12 @@
   revision = "83801418e1b59fb1880e363299581ee543af32ca"
 
 [[projects]]
+  name = "gopkg.in/alecthomas/kingpin.v1"
+  packages = ["."]
+  revision = "45f9714aa86a9624491adeaab1e9df1baf84dd38"
+  version = "v1.3.7"
+
+[[projects]]
   name = "gopkg.in/alecthomas/kingpin.v2"
   packages = ["."]
   revision = "947dcec5ba9c011838740e680966fd7087a71d0d"
@@ -129,6 +152,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "12ea4916f95be6e7c9ade42d6a55849b2a47bce2eca287ef220023195c8b0777"
+  inputs-digest = "68829883da21db7468b468654e057710d617a9b6472d2c377348c9a9c57ca043"
   solver-name = "gps-cdcl"
   solver-version = 1
