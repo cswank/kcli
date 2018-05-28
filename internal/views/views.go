@@ -9,9 +9,14 @@ import (
 	ui "github.com/jroimartin/gocui"
 )
 
+var (
+	source string
+)
+
 //NewGui creates the command line user inferface and
 //keybindings.
 func NewGui(cli streams.Streamer, topic string, partition, offset int) error {
+	source = cli.Source()
 	g, err := ui.NewGui(ui.Output256)
 	if err != nil {
 		return fmt.Errorf("could not create gui: %s", err)

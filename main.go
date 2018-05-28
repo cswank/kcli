@@ -23,6 +23,8 @@ var (
 	ssh       = kingpin.Flag("ssh", "ssh username for tunneling to a kafka host.  This currently only works for a single kafka node, not a cluster").String()
 	sshPort   = kingpin.Flag("port", "ssh port for tunneling to kafka hosts").Default("22").Int()
 
+	region = kingpin.Flag("region", "aws region (if set then connect to kinesis").Short('r').String()
+
 	f *os.File
 )
 
@@ -30,20 +32,26 @@ func init() {
 	kingpin.Parse()
 }
 
-func connect() streams.Streamer {
-	//cli, err := streams.NewKafka(getAddresses(*addrs), *ssh, *sshPort)
-	cli, err := streams.NewKinesis("us-west-2")
-	if err != nil {
-		log.Fatal(err)
-	}
+func connect() (streams.Streamer, error) {
+	var cli streams.Streamer
+	var err error
 
-	return cli
+	if *region == "" {
+		cli, err = streams.NewKafka(getAddresses(*addrs), *ssh, *sshPort)
+	} else {
+		cli, err = streams.NewKinesis(*region)
+	}
+	return cli, err
 }
 
 func main() {
 	setLogout()
-	cli := connect()
-	err := views.NewGui(cli, *topic, *partition, *offset)
+	cli, err := connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	err = views.NewGui(cli, *topic, *partition, *offset)
 	if f != nil {
 		f.Close()
 		log.SetOutput(os.Stderr)

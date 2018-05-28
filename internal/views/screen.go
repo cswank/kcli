@@ -63,7 +63,7 @@ func newScreen(cli streams.Streamer, g *ui.Gui, width, height int, opts ...func(
 		height:       height,
 		header:       newHeader(width, height),
 		body:         b,
-		footer:       newFooter(g, width, height, ch, b.jump, b.offset, searchCh),
+		footer:       newFooter(g, width, height, cli.Source(), ch, b.jump, b.offset, searchCh),
 		help:         newHelp(width, height),
 		searchChan:   searchCh,
 		flashMessage: ch,

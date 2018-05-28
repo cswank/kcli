@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"time"
 
 	"github.com/cswank/kcli/internal/colors"
 	"github.com/cswank/kcli/internal/streams"
@@ -19,7 +20,7 @@ type feeder interface {
 	page(page int) error
 	header() string
 	enter(row int) (feeder, error)
-	jump(i int64) error
+	jump(i int64, s string) error
 	search(s string, cb func(int64, int64)) (int64, error)
 	row() int
 }
@@ -83,7 +84,7 @@ func (r *root) enter(row int) (feeder, error) {
 	return newTopic(r.cli, r.topics[row], r.width, r.height, r.flashMessage)
 }
 
-func (r *root) jump(_ int64) error                                   { return nil }
+func (r *root) jump(_ int64, _ string) error                         { return nil }
 func (r *root) search(_ string, _ func(int64, int64)) (int64, error) { return -1, nil }
 
 func (r *root) row() int { return r.enteredAt }
@@ -128,7 +129,7 @@ func (t *topic) search(s string, cb func(int64, int64)) (int64, error) {
 	return int64(len(results)), nil
 }
 
-func (t *topic) jump(i int64) error {
+func (t *topic) jump(i int64, s string) error {
 	if int(i) >= len(t.partitions) || int(i) < 0 {
 		t.flashMessage <- "nothing to see here"
 		return nil
@@ -216,12 +217,36 @@ func (t *topic) print() {
 	}
 }
 
+type messageStack struct {
+	top   []streams.Message
+	stack [][]streams.Message
+}
+
+func newMessageStack(rows []streams.Message) messageStack {
+	return messageStack{top: rows, stack: [][]streams.Message{rows}}
+}
+
+func (s *messageStack) add(rows []streams.Message) {
+	s.top = rows
+	s.stack = append(s.stack, rows)
+}
+
+func (s *messageStack) pop() {
+	if len(s.stack) == 1 {
+		return
+	}
+
+	i := len(s.stack) - 1
+	s.stack = s.stack[0:i]
+	s.top = s.stack[len(s.stack)-1]
+}
+
 type partition struct {
 	cli          streams.Streamer
 	height       int
 	width        int
 	partition    streams.Partition
-	rows         []streams.Message
+	stack        messageStack
 	enteredAt    int
 	fmt          string
 	pg           int
@@ -235,7 +260,7 @@ func newPartition(cli streams.Streamer, p streams.Partition, width, height int, 
 		width:        width,
 		height:       height,
 		partition:    p,
-		rows:         rows,
+		stack:        newMessageStack(rows),
 		fmt:          "%-12d %s",
 		flashMessage: flashMessage,
 	}, err
@@ -247,21 +272,28 @@ func (p *partition) search(s string, cb func(int64, int64)) (int64, error) {
 		return i, err
 	}
 
-	return i, p.jump(i)
+	return i, p.jump(i, "")
 }
 
-func (p *partition) jump(i int64) error {
-	if i >= p.partition.End {
-		return nil
-	}
+func (p *partition) jump(i int64, d string) error {
+	if d == "s" {
+		s := fmt.Sprintf("-%ds", i)
+		d, _ := time.ParseDuration(s)
+		ts := time.Now().Add(d)
+		p.partition.After = &ts
+	} else {
+		if i >= p.partition.End {
+			return nil
+		}
 
-	p.pg = int(i) / p.height
-	p.partition.Offset = i
+		p.pg = int(i) / p.height
+		p.partition.Offset = i
+	}
 	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
 	if err != nil {
 		return err
 	}
-	p.rows = rows
+	p.stack.add(rows)
 	return nil
 }
 
@@ -278,8 +310,10 @@ func (p *partition) header() string {
 }
 
 func (p *partition) getRows() ([]string, error) {
-	out := make([]string, len(p.rows))
-	for i, msg := range p.rows {
+	rows := p.stack.top
+
+	out := make([]string, len(rows))
+	for i, msg := range rows {
 		end := p.width
 		if len(msg.Value) < end {
 			end = len(msg.Value)
@@ -291,6 +325,14 @@ func (p *partition) getRows() ([]string, error) {
 }
 
 func (p *partition) page(pg int) error {
+	if source == "kafka" {
+		return p.pageKafka(pg)
+	}
+
+	return p.pageKinesis(pg)
+}
+
+func (p *partition) pageKafka(pg int) error {
 	if p.pg == 0 && pg < 0 && p.partition.Offset == p.partition.Start {
 		return nil
 	} else if p.pg == 0 && pg < 0 && p.partition.Offset > p.partition.Start {
@@ -303,21 +345,45 @@ func (p *partition) page(pg int) error {
 	}
 	p.pg += pg
 	p.partition.Offset = o
+	return p.doPage()
+}
+
+func (p *partition) pageKinesis(pg int) error {
+	if pg == -1 && p.pg == 0 {
+		return nil
+	}
+
+	p.pg += pg
+	if pg == -1 {
+		p.stack.pop()
+		return nil
+	}
+
+	rows := p.stack.top
+	m := rows[len(rows)-1]
+	p.partition.After = nil
+	p.partition.SequenceNumber = m.SequenceNumber
+	return p.doPage()
+}
+
+func (p *partition) doPage() error {
 	rows, err := p.cli.GetPartition(p.partition, p.height, func(_ []byte) bool { return true })
 	if err != nil {
 		return err
 	}
-	p.rows = rows
+
+	p.stack.add(rows)
 	return nil
 }
 
 func (p *partition) enter(row int) (feeder, error) {
-	if row >= len(p.rows) {
+	rows := p.stack.top
+	if row >= len(rows) {
 		go func() { p.flashMessage <- "nothing to see here" }()
 		return nil, errNoData
 	}
 	p.enteredAt = row
-	return newMessage(p.rows[row], p.width, p.height, p.flashMessage)
+	return newMessage(rows[row], p.width, p.height, p.flashMessage)
 }
 
 func (p *partition) print() {
@@ -365,7 +431,7 @@ func (m *message) print() {
 
 func (m *message) search(_ string, _ func(int64, int64)) (int64, error) { return -1, nil }
 
-func (m *message) jump(_ int64) error { return nil }
+func (m *message) jump(_ int64, _ string) error { return nil }
 
 func (m *message) row() int { return m.enteredAt }
 

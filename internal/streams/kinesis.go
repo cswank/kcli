@@ -9,13 +9,16 @@ import (
 )
 
 type KinesisClient struct {
-	cli *kinesis.Kinesis
+	cli         *kinesis.Kinesis
+	first, last string
 }
 
 func NewKinesis(region string) (*KinesisClient, error) {
 	c := kinesis.New(session.New(&aws.Config{Region: aws.String(region)}))
 	return &KinesisClient{cli: c}, nil
 }
+
+func (k *KinesisClient) Source() string { return "kinesis" }
 
 func (k *KinesisClient) GetTopics() ([]string, error) {
 	resp, err := k.cli.ListStreams(nil)
@@ -41,7 +44,6 @@ func (k *KinesisClient) GetTopic(streamName string) ([]Partition, error) {
 	for i, s := range resp.StreamDescription.Shards {
 		out[i] = Partition{id: s.ShardId, stream: aws.String(streamName), Topic: streamName, Partition: int32(i), Start: 0, End: 2}
 		//r := s.SequenceNumberRange
-		log.Printf("%v\n", s)
 	}
 
 	return out, nil
@@ -52,36 +54,68 @@ func (k *KinesisClient) SearchTopic(partitions []Partition, term string, firstRe
 }
 
 func (k *KinesisClient) GetPartition(partition Partition, rows int, cb func(record []byte) bool) ([]Message, error) {
-	i, err := k.cli.GetShardIterator(&kinesis.GetShardIteratorInput{
-		ShardId:           partition.id,
-		ShardIteratorType: aws.String("TRIM_HORIZON"),
-		StreamName:        partition.stream,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	// get records use shard iterator for making request
-	records, err := k.cli.GetRecords(&kinesis.GetRecordsInput{
-		ShardIterator: i.ShardIterator,
-		Limit:         aws.Int64(int64(rows)),
-	})
-
-	log.Println("records", records.Records, err)
-
-	if err != nil {
-		return nil, err
-	}
-
-	out := make([]Message, len(records.Records))
-	for i, r := range records.Records {
-		out[i] = Message{
-			Partition: partition,
-			Value:     r.Data,
-			Offset:    int64(i),
+	var ii *kinesis.GetShardIteratorInput
+	if partition.After != nil {
+		ii = &kinesis.GetShardIteratorInput{
+			ShardId:           partition.id,
+			ShardIteratorType: aws.String("AT_TIMESTAMP"),
+			StreamName:        partition.stream,
+			Timestamp:         partition.After,
+		}
+	} else if partition.SequenceNumber != nil {
+		ii = &kinesis.GetShardIteratorInput{
+			ShardId:                partition.id,
+			ShardIteratorType:      aws.String("AFTER_SEQUENCE_NUMBER"),
+			StreamName:             partition.stream,
+			StartingSequenceNumber: partition.SequenceNumber,
+		}
+	} else {
+		ii = &kinesis.GetShardIteratorInput{
+			ShardId:           partition.id,
+			ShardIteratorType: aws.String("TRIM_HORIZON"),
+			StreamName:        partition.stream,
 		}
 	}
+	x, err := k.cli.GetShardIterator(ii)
+	if err != nil {
+		return nil, err
+	}
 
+	iter := x.ShardIterator
+	// get records use shard iterator for making request
+	var out []Message
+	var i int
+	for {
+		limit := int64(rows - i)
+		if limit <= 0 {
+			break
+		}
+
+		records, err := k.cli.GetRecords(&kinesis.GetRecordsInput{
+			ShardIterator: iter,
+			Limit:         aws.Int64(limit),
+		})
+
+		log.Printf("got %d records, err: %v", len(records.Records), err)
+		if err != nil {
+			return nil, err
+		}
+		if len(records.Records) == 0 {
+			break
+		}
+
+		for _, r := range records.Records {
+			out = append(out, Message{
+				Partition:      partition,
+				Value:          r.Data,
+				Offset:         int64(i),
+				Timestamp:      r.ApproximateArrivalTimestamp,
+				SequenceNumber: r.SequenceNumber,
+			})
+			i++
+		}
+		iter = records.NextShardIterator
+	}
 	return out, nil
 }
 

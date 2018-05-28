@@ -2,7 +2,6 @@ package views
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -16,21 +15,25 @@ const (
 )
 
 type footer struct {
-	name     string
+	name string
+
+	//kafka or kinesis
+	source   string
 	coords   coords
 	function string
 	locked   bool
 	width    int
 	setView  func(string)
 
-	jump   func(int64) error
+	jump   func(int64, string) error
 	offset func(int64) error
 	search chan<- string
 }
 
-func newFooter(g *ui.Gui, w, h int, ch <-chan string, jump func(int64) error, offset func(int64) error, search chan<- string) *footer {
+func newFooter(g *ui.Gui, w, h int, source string, ch <-chan string, jump func(int64, string) error, offset func(int64) error, search chan<- string) *footer {
 	f := &footer{
 		name:   "footer",
+		source: source,
 		coords: coords{x1: -1, y1: h - 2, x2: w, y2: h},
 		width:  w,
 		jump:   jump,
@@ -48,7 +51,6 @@ func (f *footer) Edit(v *ui.View, key ui.Key, ch rune, mod ui.Modifier) {
 	}
 	s := strings.TrimSpace(v.Buffer())
 	if key == 127 && len(s) > 0+len(f.function)+2 {
-		log.Println("key", key, s, len(s) > 0+len(f.function)+2)
 		v.Clear()
 		s = s[:len(s)-1]
 		v.Write([]byte(c1(s)))
@@ -87,11 +89,23 @@ func (f *footer) exit(g *ui.Gui, v *ui.View) error {
 	term := strings.TrimSpace(s[i+1:])
 	switch f.function {
 	case "jump":
-		n, err := strconv.ParseInt(strings.TrimSpace(term), 10, 64)
-		if err != nil {
-			return err
+		var n int64
+		var s string
+		if f.source == "kafka" {
+			var err error
+			n, err = strconv.ParseInt(strings.TrimSpace(term), 10, 64)
+			if err != nil {
+				return err
+			}
+		} else {
+			d, err := time.ParseDuration(term)
+			if err != nil {
+				return err
+			}
+			s = "s"
+			n = int64(d.Seconds())
 		}
-		if err := f.jump(n); err != nil {
+		if err := f.jump(n, s); err != nil {
 			return err
 		}
 	case "search":
@@ -118,7 +132,7 @@ func (f *footer) acceptable(s string) bool {
 	case "filter":
 		return f.isChar(s)
 	case "jump":
-		return f.isNum(s)
+		return f.isDur(s)
 	case "offset":
 		return f.isNum(s)
 	default:
@@ -134,6 +148,16 @@ func (f *footer) isNum(s string) bool {
 	x := nums
 	if f.function == "offset" {
 		x += "-"
+	}
+	return strings.Contains(x, s)
+}
+
+func (f *footer) isDur(s string) bool {
+	x := nums
+	if f.source == "kafka" && f.function == "offset" {
+		x += "-"
+	} else if f.source == "kinesis" {
+		x += "smh"
 	}
 	return strings.Contains(x, s)
 }

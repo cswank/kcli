@@ -33,8 +33,10 @@ type Partition struct {
 	Filter    string `json:"filter"`
 
 	//stuff for kinesis
-	id     *string
-	stream *string
+	id             *string
+	stream         *string
+	After          *time.Time
+	SequenceNumber *string
 }
 
 //String turns a partition into a string
@@ -48,6 +50,10 @@ type Message struct {
 	Partition Partition `json:"partition"`
 	Value     []byte    `json:"msg"`
 	Offset    int64     `json:"offset"`
+
+	//for kinesis
+	Timestamp      *time.Time
+	SequenceNumber *string
 }
 
 //NewKafka returns a kafka Client.
@@ -83,6 +89,8 @@ func NewKafka(addrs []string, user string, port int) (*KafkaClient, error) {
 
 	return cli, nil
 }
+
+func (k *KafkaClient) Source() string { return "kafka" }
 
 func (c *KafkaClient) findLeaders(addrs []string) {
 	c.lock.Lock()
