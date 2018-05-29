@@ -39,7 +39,8 @@ func connect() (streams.Streamer, error) {
 	if *region == "" {
 		cli, err = streams.NewKafka(getAddresses(*addrs), *ssh, *sshPort)
 	} else {
-		cli, err = streams.NewKinesis(*region)
+		cli, err = streams.NewSQS(*region)
+		//cli, err = streams.NewKinesis(*region)
 	}
 	return cli, err
 }

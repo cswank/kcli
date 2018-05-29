@@ -1,6 +1,8 @@
 package streams
 
 import (
+	"log"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sqs"
@@ -30,7 +32,29 @@ func (s *SQSClient) GetTopics() ([]string, error) {
 }
 
 func (k *SQSClient) GetTopic(streamName string) ([]Partition, error) {
-	return nil, nil
+	result, err := k.cli.ReceiveMessage(&sqs.ReceiveMessageInput{
+		AttributeNames: []*string{
+			aws.String(sqs.MessageSystemAttributeNameSentTimestamp),
+		},
+		MessageAttributeNames: []*string{
+			aws.String(sqs.QueueAttributeNameAll),
+		},
+		QueueUrl:            &streamName,
+		MaxNumberOfMessages: aws.Int64(10),
+		VisibilityTimeout:   aws.Int64(36000), // 10 hours
+		WaitTimeSeconds:     aws.Int64(0),
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]Partition, len(result.Messages))
+	for i, msg := range result.Messages {
+		log.Printf("msg %d: %+v", i, msg)
+	}
+
+	return out, nil
 }
 
 func (s *SQSClient) SearchTopic(partitions []Partition, term string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
@@ -50,3 +74,5 @@ func (s *SQSClient) Fetch(partition Partition, end int64, cb func(string)) error
 }
 
 func (s *SQSClient) Close() {}
+
+func (s *SQSClient) Source() string { return "sqs" }
