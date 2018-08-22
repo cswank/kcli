@@ -28,8 +28,8 @@ func init() {
 }
 
 func main() {
-	setLogout()
 	cli := connect()
+	setLogout()
 	err := views.NewGui(cli, *topic, *partition, *offset)
 	if f != nil {
 		f.Close()
