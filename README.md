@@ -21,8 +21,13 @@ is not tested).  If you have go installed you can do:
 	  -t, --topic=TOPIC   go directly to a topic
 	  -p, --partition=-1  go directly to a partition of a topic
 	  -o, --offset=-1     go directly to a message
-	      --ssh=SSH       ssh username for tunneling to kafka hosts
-          --port=22       ssh port for tunneling to kafka hosts
+
+NOTE: If your Kafka cluster has tls authentication enabled you need to set the
+following env vars:
+
+    export KCLI_CERT_FILE="<path to a client cert file in pem format>"
+    export KCLI_KEY_FILE="<path to a client key file in pem format>"
+    export KCLI_CA_CERT_FILE="<path to a ca cert file in pem format>"
 
 After starting it up you get a list of topics:
 

@@ -1,13 +1,16 @@
 package kafka
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"encoding/json"
+	"io/ioutil"
+	"os"
 	"sort"
 	"strings"
 	"time"
 
 	"github.com/Shopify/sarama"
-	"github.com/cswank/kcli/internal/tunnel"
 )
 
 //Client fetches from kafka
@@ -40,20 +43,13 @@ type Message struct {
 }
 
 //New returns a kafka Client.
-func New(addrs []string, user string, port int) (*Client, error) {
-	if user != "" {
-		t := tunnel.New(user, port, addrs)
-		var err error
-		addrs, err = t.Connect()
-		//TODO: figure out which node owns
-		//which resource so a client can be created
-		//for each host on the cluster.
-		if err != nil {
-			return nil, err
-		}
+func New(addrs []string) (*Client, error) {
+	cfg, err := getConfig()
+	if err != nil {
+		return nil, err
 	}
 
-	s, err := sarama.NewClient(addrs, nil)
+	s, err := sarama.NewClient(addrs, cfg)
 	if err != nil {
 		return nil, err
 	}
@@ -64,6 +60,48 @@ func New(addrs []string, user string, port int) (*Client, error) {
 	}
 
 	return cli, nil
+}
+
+func getConfig() (*sarama.Config, error) {
+	cfg := sarama.NewConfig()
+	tlsCfg, err := getTLSConfig()
+	if err != nil || tlsCfg == nil {
+		return cfg, err
+	}
+
+	cfg.Net.TLS.Enable = true
+	cfg.Net.TLS.Config = tlsCfg
+	return cfg, nil
+}
+
+func getTLSConfig() (*tls.Config, error) {
+	certFile := os.Getenv("KCLI_CERT_FILE")
+	keyFile := os.Getenv("KCLI_KEY_FILE")
+	caCertFile := os.Getenv("KCLI_CA_CERT_FILE")
+	if certFile == "" || keyFile == "" || caCertFile == "" {
+		return nil, nil
+	}
+
+	cfg := tls.Config{}
+
+	// Load client cert
+	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
+	if err != nil {
+		return &cfg, err
+	}
+	cfg.Certificates = []tls.Certificate{cert}
+
+	// Load CA cert
+	caCert, err := ioutil.ReadFile(caCertFile)
+	if err != nil {
+		return &cfg, err
+	}
+	caCertPool := x509.NewCertPool()
+	caCertPool.AppendCertsFromPEM(caCert)
+	cfg.RootCAs = caCertPool
+
+	cfg.BuildNameToCertificate()
+	return &cfg, nil
 }
 
 //GetTopics gets topics (duh)
