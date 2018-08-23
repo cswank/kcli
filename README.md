@@ -49,11 +49,6 @@ And navigate to a message and hit enter to see the message:
 
 <img src="./docs/five.png"/>
 
-### SSH Tunnels
-If you set the --ssh=\<SSH USERNAME> flag one ssh tunnel is opened up per
-kafka host from the --addresses flag so you can connect to a remote cluster.
-You must have password-less ssh enabled for this to work.
-
 ### Searching
 You can search for a string on either a partition or topic.  When you search
 on a partition then the current offset is set to the first message that
