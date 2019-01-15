@@ -15,8 +15,9 @@ import (
 
 //Client fetches from kafka
 type Client struct {
-	addrs  []string
-	sarama sarama.Client
+	addrs   []string
+	sarama  sarama.Client
+	decoder func([]byte) []byte
 }
 
 //Partition holds information about a kafka partition
@@ -43,7 +44,7 @@ type Message struct {
 }
 
 //New returns a kafka Client.
-func New(addrs []string) (*Client, error) {
+func New(addrs []string, opts ...func(*Client)) (*Client, error) {
 	cfg, err := getConfig()
 	if err != nil {
 		return nil, err
@@ -55,11 +56,23 @@ func New(addrs []string) (*Client, error) {
 	}
 
 	cli := &Client{
-		sarama: s,
-		addrs:  addrs,
+		sarama:  s,
+		addrs:   addrs,
+		decoder: func(b []byte) []byte { return b },
+	}
+
+	for _, opt := range opts {
+		opt(cli)
 	}
 
 	return cli, nil
+}
+
+func Noop(*Client) {}
+
+func DecodeProtobuf(c *Client) {
+	//TODO: decode for real here
+	c.decoder = func(b []byte) []byte { return b }
 }
 
 func getConfig() (*sarama.Config, error) {
@@ -168,7 +181,7 @@ func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]M
 		case msg = <-pc.Messages():
 			if f(msg.Value) {
 				out = append(out, Message{
-					Value:  msg.Value,
+					Value:  c.decoder(msg.Value),
 					Offset: msg.Offset,
 					Partition: Partition{
 						Offset:    msg.Offset,

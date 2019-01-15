@@ -20,6 +20,7 @@ var (
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()
 	partition = kingpin.Flag("partition", "go directly to a partition of a topic").Short('p').Default("-1").Int()
 	offset    = kingpin.Flag("offset", "go directly to a message").Short('o').Default("-1").Int()
+	decoder   = kingpin.Flag("decoder", "how to decode kafka messages").Short('d').Default("none").Enum("none", "protobuf")
 	f         *os.File
 )
 
@@ -41,7 +42,12 @@ func main() {
 }
 
 func connect() *kafka.Client {
-	cli, err := kafka.New(getAddresses(*addrs))
+	var f func(*kafka.Client) = kafka.Noop
+	if *decoder == "protobuf" {
+		f = kafka.DecodeProtobuf
+	}
+
+	cli, err := kafka.New(getAddresses(*addrs), f)
 	if err != nil {
 		log.Fatal(err)
 	}
