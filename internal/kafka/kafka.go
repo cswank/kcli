@@ -17,6 +17,11 @@ type Decoder interface {
 	Decode([]byte) []byte
 }
 
+// plainDecoder is the default Decoder
+type plainDecoder struct{}
+
+func (p plainDecoder) Decode(b []byte) []byte { return b }
+
 //Client fetches from kafka
 type Client struct {
 	addrs   []string
@@ -46,10 +51,6 @@ type Message struct {
 	Value     []byte    `json:"msg"`
 	Offset    int64     `json:"offset"`
 }
-
-type plainDecoder struct{}
-
-func (p plainDecoder) Decode(b []byte) []byte { return b }
 
 //New returns a kafka Client.
 func New(addrs []string, opts ...func(*Client)) (*Client, error) {
