@@ -13,11 +13,15 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+type Decoder interface {
+	Decode([]byte) []byte
+}
+
 //Client fetches from kafka
 type Client struct {
 	addrs   []string
 	sarama  sarama.Client
-	decoder func([]byte) []byte
+	decoder Decoder
 }
 
 //Partition holds information about a kafka partition
@@ -43,6 +47,10 @@ type Message struct {
 	Offset    int64     `json:"offset"`
 }
 
+type plainDecoder struct{}
+
+func (p plainDecoder) Decode(b []byte) []byte { return b }
+
 //New returns a kafka Client.
 func New(addrs []string, opts ...func(*Client)) (*Client, error) {
 	cfg, err := getConfig()
@@ -58,7 +66,7 @@ func New(addrs []string, opts ...func(*Client)) (*Client, error) {
 	cli := &Client{
 		sarama:  s,
 		addrs:   addrs,
-		decoder: func(b []byte) []byte { return b },
+		decoder: &plainDecoder{},
 	}
 
 	for _, opt := range opts {
@@ -68,11 +76,10 @@ func New(addrs []string, opts ...func(*Client)) (*Client, error) {
 	return cli, nil
 }
 
-func Noop(*Client) {}
-
-func DecodeProtobuf(c *Client) {
-	//TODO: decode for real here
-	c.decoder = func(b []byte) []byte { return b }
+func WithDecoder(d Decoder) func(*Client) {
+	return func(c *Client) {
+		c.decoder = d
+	}
 }
 
 func getConfig() (*sarama.Config, error) {
@@ -181,7 +188,7 @@ func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]M
 		case msg = <-pc.Messages():
 			if f(msg.Value) {
 				out = append(out, Message{
-					Value:  c.decoder(msg.Value),
+					Value:  c.decoder.Decode(msg.Value),
 					Offset: msg.Offset,
 					Partition: Partition{
 						Offset:    msg.Offset,

@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"plugin"
 	"strings"
 
 	"github.com/cswank/kcli/internal/kafka"
@@ -20,7 +21,7 @@ var (
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()
 	partition = kingpin.Flag("partition", "go directly to a partition of a topic").Short('p').Default("-1").Int()
 	offset    = kingpin.Flag("offset", "go directly to a message").Short('o').Default("-1").Int()
-	decoder   = kingpin.Flag("decoder", "how to decode kafka messages").Short('d').Default("none").Enum("none", "protobuf")
+	decoder   = kingpin.Flag("decoder", "path to a plugin to decode kafka messages").Short('d').String()
 	f         *os.File
 )
 
@@ -42,12 +43,13 @@ func main() {
 }
 
 func connect() *kafka.Client {
-	var f func(*kafka.Client) = kafka.Noop
-	if *decoder == "protobuf" {
-		f = kafka.DecodeProtobuf
+	var opts []func(*kafka.Client)
+	if *decoder != "" {
+		dec := getDecoder(*decoder)
+		opts = []func(*kafka.Client){kafka.WithDecoder(dec)}
 	}
 
-	cli, err := kafka.New(getAddresses(*addrs), f)
+	cli, err := kafka.New(getAddresses(*addrs), opts...)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -76,4 +78,24 @@ func getAddresses(addrs []string) []string {
 	}
 
 	return out
+}
+
+func getDecoder(pth string) kafka.Decoder {
+	plug, err := plugin.Open(pth)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	s, err := plug.Lookup("Decoder")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	var dec kafka.Decoder
+	dec, ok := s.(kafka.Decoder)
+	if !ok {
+		log.Fatalf("unexpected type from module symbol")
+	}
+
+	return dec
 }
