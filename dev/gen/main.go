@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/cswank/kcli/dev/person"
+	"github.com/golang/protobuf/proto"
 )
 
 var (
@@ -64,10 +66,30 @@ func main() {
 	}
 	l := make([]item, 400)
 	for i := 0; i < 400; i++ {
-		l[i] = item{
+		x := item{
 			First: randName(firstNames),
 			Last:  randName(lastNames),
 			Age:   randAge(),
+		}
+
+		y := &person.Person{
+			First: x.First,
+			Last:  x.Last,
+			Age:   int32(x.Age),
+		}
+
+		l[i] = x
+		d, _ := proto.Marshal(y)
+
+		msg := &sarama.ProducerMessage{
+			Topic: "proto",
+			Key:   sarama.StringEncoder(x.First),
+			Value: sarama.StringEncoder(string(d)),
+		}
+
+		_, _, err = producer.SendMessage(msg)
+		if err != nil {
+			log.Fatal(err)
 		}
 	}
 
@@ -78,6 +100,7 @@ func main() {
 		Key:   sarama.StringEncoder("item"),
 		Value: sarama.StringEncoder(string(d)),
 	}
+
 	_, _, err = producer.SendMessage(msg)
 	if err != nil {
 		log.Fatal(err)
