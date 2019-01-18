@@ -83,8 +83,9 @@ from each message in the partition.
 
 ### Custom Decoder
 If your kafka messages are encoded in some way you can provide a custom decoder
-in the form of a plugin.  See plugins/protobuf for an example.  Once you have
-compiled the plugin you use it as the default decoder by starting kcli like so:
+in the form of a plugin.  See [.plugins/protobuf](./blob/master/plugins/protobuf/protobuf.go)
+for an example.  Once you have compiled the plugin you use it as the default decoder
+by starting kcli like so:
 
     kcli -d /path/to/your/decoder.so
 
