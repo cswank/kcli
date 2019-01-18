@@ -81,6 +81,13 @@ for example:
 Assuming the messages that get printed are JSON, this print the sum of all age fields
 from each message in the partition.
 
+### Custom Decoder
+If your kafka messages are encoded in some way you can provide a custom decoder
+in the form of a plugin.  See plugins/protobuf for an example.  Once you have
+compiled the plugin you use it as the default decoder by starting kcli like so:
+
+    kcli -d /path/to/your/decoder.so
+
 ### Screen Colors
 
 If you don't like the defaul colors you can set KCLI_COLOR[0,1,2,3] to one of:

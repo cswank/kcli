@@ -5,7 +5,12 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-// Example of how to create a protobuf plugin for your data structure
+// Protobuf is an example of how to create a plugin
+// to decode protobuf encoded kafka messages.
+// To compile:
+//     go build -buildmode=plugin -o protobuf.so protobuf.go
+// Then start kcli like:
+//     kcli -d ./protobuf.so
 type Protobuf struct{}
 
 func (p Protobuf) Decode(b []byte) ([]byte, error) {
