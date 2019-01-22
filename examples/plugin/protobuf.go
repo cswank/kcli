@@ -14,6 +14,10 @@ import (
 type Protobuf struct{}
 
 func (p Protobuf) Decode(topic string, b []byte) ([]byte, error) {
+	if topic != "proto" {
+		return b, nil
+	}
+
 	var x person.Person
 	err := proto.Unmarshal(b, &x)
 	if err != nil {
