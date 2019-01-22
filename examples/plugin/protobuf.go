@@ -13,7 +13,7 @@ import (
 //     kcli -d ./protobuf.so
 type Protobuf struct{}
 
-func (p Protobuf) Decode(b []byte) ([]byte, error) {
+func (p Protobuf) Decode(topic string, b []byte) ([]byte, error) {
 	var x person.Person
 	err := proto.Unmarshal(b, &x)
 	if err != nil {

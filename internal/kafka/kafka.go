@@ -14,13 +14,13 @@ import (
 )
 
 type Decoder interface {
-	Decode([]byte) ([]byte, error)
+	Decode(topic string, data []byte) ([]byte, error)
 }
 
 // plainDecoder is the default Decoder
 type plainDecoder struct{}
 
-func (p plainDecoder) Decode(b []byte) ([]byte, error) { return b, nil }
+func (p plainDecoder) Decode(topic string, data []byte) ([]byte, error) { return data, nil }
 
 //Client fetches from kafka
 type Client struct {
@@ -187,7 +187,7 @@ func (c *Client) GetPartition(part Partition, end int, f func([]byte) bool) ([]M
 		select {
 		case msg = <-pc.Messages():
 			if f(msg.Value) {
-				val, err := c.decoder.Decode(msg.Value)
+				val, err := c.decoder.Decode(part.Topic, msg.Value)
 				if err != nil {
 					return nil, err
 				}
