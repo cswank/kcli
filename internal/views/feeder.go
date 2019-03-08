@@ -80,11 +80,26 @@ func (r *root) enter(row int) (feeder, error) {
 		return nil, errNoData
 	}
 	r.enteredAt = row
-	return newTopic(r.cli, r.topics[row], r.width, r.height, r.flashMessage)
+	return newTopic(r.cli, r.topics[row + r.height * r.pg], r.width, r.height, r.flashMessage)
 }
 
-func (r *root) jump(_ int64) error                                   { return nil }
-func (r *root) search(_ string, _ func(int64, int64)) (int64, error) { return -1, nil }
+func (r *root) jump(_ int64) error { return nil }
+func (r *root) search(search string, _ func(int64, int64)) (int64, error) {
+
+	var pa = -1
+	var cur = int64(-1)
+	for i := range r.topics {
+		if r.topics[i] == search {
+			pa = i / r.height
+			cur = int64(i % r.height)
+			r.pg = pa
+			break
+		}
+	}
+
+	r.pg = pa
+	return cur, nil
+}
 
 func (r *root) row() int { return r.enteredAt }
 
