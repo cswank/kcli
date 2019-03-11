@@ -212,7 +212,9 @@ func (s *screen) doSearch() {
 
 		s.g.Update(func(g *ui.Gui) error {
 			v, _ := s.g.View("body")
-			v.SetCursor(0, int(n))
+			if s.body.stack.name() == "root" {
+				v.SetCursor(0, int(n))
+			}
 			return s.body.Render(g, v)
 		})
 		s.lock = false

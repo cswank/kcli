@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/cswank/kcli/internal/colors"
 	"github.com/cswank/kcli/internal/kafka"
@@ -89,7 +90,7 @@ func (r *root) search(search string, _ func(int64, int64)) (int64, error) {
 	var pa = -1
 	var cur = int64(-1)
 	for i := range r.topics {
-		if r.topics[i] == search {
+		if strings.Contains(r.topics[i], search) {
 			pa = i / r.height
 			cur = int64(i % r.height)
 			r.pg = pa
