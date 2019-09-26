@@ -10,17 +10,20 @@ is not tested).  If you have go installed you can do:
 
 ## Usage
 
-	kcli --help
-	usage: kcli [<flags>]
+```console
+kcli --help
+usage: kcli [<flags>]
 
-	Flags:
-	      --help          Show context-sensitive help (also try --help-long and --help-man).
-	  -a, --addresses=localhost:9092 ...
-	                      comma seperated list of kafka addresses
-	  -l, --log=LOG       for debugging, set the log output to a file
-	  -t, --topic=TOPIC   go directly to a topic
-	  -p, --partition=-1  go directly to a partition of a topic
-	  -o, --offset=-1     go directly to a message
+Flags:
+      --help             Show context-sensitive help (also try --help-long and --help-man).
+  -a, --addresses=localhost:9092 ...
+                         comma separated list of kafka addresses
+  -l, --log=LOG          for debugging, set the log output to a file
+  -t, --topic=TOPIC      go directly to a topic
+  -p, --partition=-1     go directly to a partition of a topic
+  -o, --offset=-1        go directly to a message
+  -d, --decoder=DECODER  path to a plugin to decode kafka messages
+```
 
 NOTE: If your Kafka cluster has tls authentication enabled you need to set the
 following env vars:
