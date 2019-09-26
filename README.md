@@ -6,7 +6,9 @@ Kcli is a kafka read only command line browser.
 Binaries are provided [here](https://github.com/cswank/kcli/releases/tag/1.4.1) (windows
 is not tested).  If you have go installed you can do:
 
-    $ go get -u github.com/cswank/kcli
+```console
+$ go get -u github.com/cswank/kcli
+```
 
 ## Usage
 
@@ -28,9 +30,11 @@ Flags:
 NOTE: If your Kafka cluster has tls authentication enabled you need to set the
 following env vars:
 
-    export KCLI_CERT_FILE="<path to a client cert file in pem format>"
-    export KCLI_KEY_FILE="<path to a client key file in pem format>"
-    export KCLI_CA_CERT_FILE="<path to a ca cert file in pem format>"
+```console
+export KCLI_CERT_FILE="<path to a client cert file in pem format>"
+export KCLI_KEY_FILE="<path to a client key file in pem format>"
+export KCLI_CA_CERT_FILE="<path to a ca cert file in pem format>"
+```
 
 After starting it up you get a list of topics:
 
@@ -79,7 +83,9 @@ stdout.  If the current view is a partition then each message from the cursor to
 of the partition is printed to stdout.  This is useful if you want to process the messages,
 for example:
 
-    kcli | jq .age | awk '{s+=$1} END {print s}'
+```console
+kcli | jq .age | awk '{s+=$1} END {print s}'
+```
 
 Assuming the messages that get printed are JSON, this print the sum of all age fields
 from each message in the partition.
@@ -90,7 +96,9 @@ in the form of a plugin.  See [.examples/plugin](./examples/plugin/protobuf.go)
 for an example.  Once you have compiled the plugin you use it as the default decoder
 by starting kcli like so:
 
-    kcli -d /path/to/your/decoder.so
+```console
+kcli -d /path/to/your/decoder.so
+```
 
 ### Screen Colors
 
