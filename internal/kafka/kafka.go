@@ -52,8 +52,10 @@ type Message struct {
 	Offset    int64     `json:"offset"`
 }
 
+type Opt func(*Client)
+
 //New returns a kafka Client.
-func New(addrs []string, opts ...func(*Client)) (*Client, error) {
+func New(addrs []string, opts ...Opt) (*Client, error) {
 	cfg, err := getConfig()
 	if err != nil {
 		return nil, err

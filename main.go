@@ -43,10 +43,10 @@ func main() {
 }
 
 func connect() *kafka.Client {
-	var opts []func(*kafka.Client)
+	var opts []kafka.Opt
 	if *decoder != "" {
 		dec := getDecoder(*decoder)
-		opts = []func(*kafka.Client){kafka.WithDecoder(dec)}
+		opts = []kafka.Opt{kafka.WithDecoder(dec)}
 	}
 
 	cli, err := kafka.New(getAddresses(*addrs), opts...)
