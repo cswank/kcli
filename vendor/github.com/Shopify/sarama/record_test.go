@@ -69,9 +69,10 @@ var recordBatchTestCases = []struct {
 	{
 		name: "uncompressed record",
 		batch: RecordBatch{
-			Version:        2,
-			FirstTimestamp: time.Unix(1479847795, 0),
-			MaxTimestamp:   time.Unix(0, 0),
+			Version:         2,
+			FirstTimestamp:  time.Unix(1479847795, 0),
+			MaxTimestamp:    time.Unix(0, 0),
+			LastOffsetDelta: 0,
 			Records: []*Record{{
 				TimestampDelta: 5 * time.Millisecond,
 				Key:            []byte{1, 2, 3, 4},
@@ -115,10 +116,12 @@ var recordBatchTestCases = []struct {
 	{
 		name: "gzipped record",
 		batch: RecordBatch{
-			Version:        2,
-			Codec:          CompressionGZIP,
-			FirstTimestamp: time.Unix(1479847795, 0),
-			MaxTimestamp:   time.Unix(0, 0),
+			Version:          2,
+			Codec:            CompressionGZIP,
+			CompressionLevel: CompressionLevelDefault,
+			FirstTimestamp:   time.Unix(1479847795, 0),
+			MaxTimestamp:     time.Unix(0, 0),
+			LastOffsetDelta:  0,
 			Records: []*Record{{
 				TimestampDelta: 5 * time.Millisecond,
 				Key:            []byte{1, 2, 3, 4},
@@ -168,10 +171,11 @@ var recordBatchTestCases = []struct {
 	{
 		name: "snappy compressed record",
 		batch: RecordBatch{
-			Version:        2,
-			Codec:          CompressionSnappy,
-			FirstTimestamp: time.Unix(1479847795, 0),
-			MaxTimestamp:   time.Unix(0, 0),
+			Version:         2,
+			Codec:           CompressionSnappy,
+			FirstTimestamp:  time.Unix(1479847795, 0),
+			MaxTimestamp:    time.Unix(0, 0),
+			LastOffsetDelta: 0,
 			Records: []*Record{{
 				TimestampDelta: 5 * time.Millisecond,
 				Key:            []byte{1, 2, 3, 4},
@@ -203,10 +207,11 @@ var recordBatchTestCases = []struct {
 	{
 		name: "lz4 compressed record",
 		batch: RecordBatch{
-			Version:        2,
-			Codec:          CompressionLZ4,
-			FirstTimestamp: time.Unix(1479847795, 0),
-			MaxTimestamp:   time.Unix(0, 0),
+			Version:         2,
+			Codec:           CompressionLZ4,
+			FirstTimestamp:  time.Unix(1479847795, 0),
+			MaxTimestamp:    time.Unix(0, 0),
+			LastOffsetDelta: 0,
 			Records: []*Record{{
 				TimestampDelta: 5 * time.Millisecond,
 				Key:            []byte{1, 2, 3, 4},
@@ -277,6 +282,9 @@ func TestRecordBatchDecoding(t *testing.T) {
 		for _, r := range tc.batch.Records {
 			r.length = varintLengthField{}
 		}
+		// The compression level is not restored on decoding. It is not needed
+		// anyway. We only set it here to ensure that comparision succeeds.
+		batch.CompressionLevel = tc.batch.CompressionLevel
 		if !reflect.DeepEqual(batch, tc.batch) {
 			t.Errorf(spew.Sprintf("invalid decode of %s\ngot %+v\nwanted %+v", tc.name, batch, tc.batch))
 		}

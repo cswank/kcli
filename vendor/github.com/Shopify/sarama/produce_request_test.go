@@ -48,9 +48,9 @@ var (
 		0x00, 0x00, 0x00, 0x46,
 		0x00, 0x00, 0x00, 0x00,
 		0x02,
-		0x54, 0x79, 0x61, 0xFD,
+		0xCA, 0x33, 0xBC, 0x05,
 		0x00, 0x00,
-		0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x01,
 		0x00, 0x00, 0x01, 0x58, 0x8D, 0xCD, 0x59, 0x38,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
 		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
@@ -83,9 +83,10 @@ func TestProduceRequest(t *testing.T) {
 
 	request.Version = 3
 	batch := &RecordBatch{
-		Version:        2,
-		FirstTimestamp: time.Unix(1479847795, 0),
-		MaxTimestamp:   time.Unix(0, 0),
+		LastOffsetDelta: 1,
+		Version:         2,
+		FirstTimestamp:  time.Unix(1479847795, 0),
+		MaxTimestamp:    time.Unix(0, 0),
 		Records: []*Record{{
 			TimestampDelta: 5 * time.Millisecond,
 			Key:            []byte{0x01, 0x02, 0x03, 0x04},
@@ -98,6 +99,8 @@ func TestProduceRequest(t *testing.T) {
 	}
 	request.AddBatch("topic", 0xAD, batch)
 	packet := testRequestEncode(t, "one record", request, produceRequestOneRecord)
-	batch.Records[0].length.startOffset = 0
+	// compressRecords field is not populated on decoding because consumers
+	// are only interested in decoded records.
+	batch.compressedRecords = nil
 	testRequestDecode(t, "one record", request, packet)
 }
