@@ -275,9 +275,9 @@ func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool,
 func (c *Client) search(info Partition, s string, stop func() bool, cb func(int64, int64)) (int64, error) {
 	n := int64(-1)
 	var i int64
-	err := c.consume(info, info.End, func(msg string) bool {
+	err := c.consume(info, info.End, func(d []byte) bool {
 		cb(i, info.End)
-		if strings.Contains(msg, s) {
+		if strings.Contains(string(d), s) {
 			n = i + info.Offset
 			return true
 		}
@@ -296,13 +296,17 @@ func (c *Client) Search(info Partition, s string, cb func(i, j int64)) (int64, e
 
 //Fetch gets all messages in a partition up intil the 'end' offset.
 func (c *Client) Fetch(info Partition, end int64, cb func(string)) error {
-	return c.consume(info, end, func(s string) bool {
-		cb(s)
+	return c.consume(info, end, func(msg []byte) bool {
+		val, err := c.decoder.Decode(info.Topic, msg)
+		if err != nil {
+			return true
+		}
+		cb(string(val))
 		return false
 	})
 }
 
-func (c *Client) consume(info Partition, end int64, cb func(string) bool) error {
+func (c *Client) consume(info Partition, end int64, cb func([]byte) bool) error {
 	consumer, err := sarama.NewConsumer(c.addrs, nil)
 	if err != nil {
 		return err
@@ -326,7 +330,7 @@ func (c *Client) consume(info Partition, end int64, cb func(string) bool) error 
 	for i := int64(0); i < end; i++ {
 		select {
 		case msg := <-pc.Messages():
-			if stop := cb(string(msg.Value)); stop {
+			if stop := cb(msg.Value); stop {
 				return nil
 			}
 		case <-time.After(time.Second):
