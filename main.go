@@ -10,12 +10,10 @@ import (
 	"github.com/cswank/kcli/internal/kafka"
 	"github.com/cswank/kcli/internal/views"
 
-	ui "github.com/jroimartin/gocui"
 	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
-	g         *ui.Gui
 	addrs     = kingpin.Flag("addresses", "comma separated list of kafka addresses").Default("localhost:9092").Short('a').Strings()
 	logout    = kingpin.Flag("log", "for debugging, set the log output to a file").Short('l').String()
 	topic     = kingpin.Flag("topic", "go directly to a topic").Short('t').String()

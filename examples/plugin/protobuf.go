@@ -13,6 +13,7 @@ import (
 //     kcli -d ./protobuf.so
 type Protobuf struct{}
 
+// Decode is required in order to be a plugin
 func (p Protobuf) Decode(topic string, b []byte) ([]byte, error) {
 	if topic != "proto" {
 		return b, nil
@@ -27,6 +28,8 @@ func (p Protobuf) Decode(topic string, b []byte) ([]byte, error) {
 	return []byte(x.String()), nil
 }
 
+// Decoder is the symbol that kcli will search for when
+// using this as a plugin.
 var Decoder Protobuf
 
 func main() {}

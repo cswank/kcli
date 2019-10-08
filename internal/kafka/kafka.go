@@ -13,6 +13,7 @@ import (
 	"github.com/Shopify/sarama"
 )
 
+// Decoder is the interface that is required of plugins
 type Decoder interface {
 	Decode(topic string, data []byte) ([]byte, error)
 }
@@ -52,6 +53,7 @@ type Message struct {
 	Offset    int64     `json:"offset"`
 }
 
+// Opts are funcs that set attributes on Client
 type Opt func(*Client)
 
 //New returns a kafka Client.
@@ -79,6 +81,7 @@ func New(addrs []string, opts ...Opt) (*Client, error) {
 	return cli, nil
 }
 
+// WithDecoder is used to insert a Decoder plugin
 func WithDecoder(d Decoder) func(*Client) {
 	return func(c *Client) {
 		c.decoder = d
