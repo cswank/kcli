@@ -4,7 +4,7 @@ Kcli is a kafka read only command line browser.
 ## Install
 
 Binaries are provided [here](https://github.com/cswank/kcli/releases/tag/1.4.1) (windows
-is not tested).  If you have go installed you can do:
+is not tested).  If you have go (1.11 or greater) installed you can do:
 
 ```console
 $ go get -u github.com/cswank/kcli
