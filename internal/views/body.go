@@ -23,6 +23,7 @@ type body struct {
 	stack        stack
 	flashMessage chan<- string
 	view         *ui.View
+	searchVal    string
 }
 
 func newBody(cli *kafka.Client, w, h int, flashMessage chan string, opts ...func(*stack) error) (*body, error) {
@@ -53,7 +54,7 @@ func (b *body) Render(g *ui.Gui, v *ui.View) error {
 
 	v.Clear()
 	for _, r := range b.rows {
-		_, err := v.Write(append([]byte(b.color(r, "", false)), []byte("\n")...))
+		_, err := v.Write(append([]byte(b.color(r, b.searchVal)), []byte("\n")...))
 		if err != nil {
 			return err
 		}
@@ -61,8 +62,8 @@ func (b *body) Render(g *ui.Gui, v *ui.View) error {
 	return nil
 }
 
-func (b *body) color(val, search string, truncate bool) string {
-	if search == "" || !truncate {
+func (b *body) color(val, search string) string {
+	if search == "" {
 		return c2(val)
 	}
 	i := strings.Index(val, search)
@@ -70,14 +71,13 @@ func (b *body) color(val, search string, truncate bool) string {
 		return c2(val)
 	}
 
-	var s1 string
-	if i > 13 {
-		s1 = fmt.Sprintf("%s...", val[0:13])
-	} else {
-		s1 = val[0:13]
+	end := len(val)
+	if end > b.width {
+		end = b.width
 	}
+	s1 := val[0:i]
 	s2 := val[i : i+len(search)]
-	s3 := val[i+len(search):]
+	s3 := val[i+len(search) : end]
 	return fmt.Sprintf("%s%s%s", c2(s1), c3(s2), c2(s3))
 }
 
@@ -151,6 +151,7 @@ func (b *body) search(s string, cb func(int64, int64)) (int64, error) {
 	if err := b.view.SetCursor(0, 0); err != nil {
 		return -1, err
 	}
+	b.searchVal = s
 	return b.stack.top.search(s, cb)
 }
 
