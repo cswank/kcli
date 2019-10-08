@@ -53,7 +53,7 @@ type Message struct {
 	Offset    int64     `json:"offset"`
 }
 
-// Opts are funcs that set attributes on Client
+// Opt is a func that sets an  attribute on Client
 type Opt func(*Client)
 
 //New returns a kafka Client.
