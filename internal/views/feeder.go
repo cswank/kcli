@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"sort"
+	"strings"
 
 	"github.com/cswank/kcli/internal/colors"
 	"github.com/cswank/kcli/internal/kafka"
@@ -333,6 +334,7 @@ type message struct {
 	enteredAt    int
 	body         []string
 	pg           int
+	offset       int
 	flashMessage chan<- string
 }
 
@@ -363,9 +365,22 @@ func (m *message) print() {
 	}
 }
 
-func (m *message) search(_ string, _ func(int64, int64)) (int64, error) { return -1, nil }
+func (m *message) search(s string, cb func(int64, int64)) (int64, error) {
+	for i, r := range m.body {
+		j := strings.Index(r, s)
+		if j > -1 {
+			return int64(j), m.jump(int64(i))
+		}
+	}
 
-func (m *message) jump(_ int64) error { return nil }
+	return -1, nil
+}
+
+func (m *message) jump(i int64) error {
+	m.pg = int(i) / m.height
+	m.offset = int(i) % m.height
+	return nil
+}
 
 func (m *message) row() int { return m.enteredAt }
 
@@ -380,12 +395,17 @@ func (m *message) header() string {
 
 func (m *message) page(pg int) error {
 	if m.pg == 0 && pg < 0 {
+		m.offset = 0
 		return nil
 	}
-	if (pg+m.pg)*m.height > len(m.body) {
+
+	if ((pg+m.pg)*m.height)+m.offset > len(m.body) {
 		return nil
 	}
 	m.pg += pg
+	if m.pg == 0 {
+		m.offset = 0
+	}
 	return nil
 }
 
@@ -395,7 +415,7 @@ func (m *message) enter(row int) (feeder, error) {
 }
 
 func (m *message) getRows() ([]string, error) {
-	start := m.pg * m.height
+	start := (m.pg * m.height) + m.offset
 	end := start + m.height
 	if end >= len(m.body) {
 		end = len(m.body)
