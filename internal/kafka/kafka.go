@@ -25,9 +25,10 @@ func (p plainDecoder) Decode(topic string, data []byte) ([]byte, error) { return
 
 //Client fetches from kafka
 type Client struct {
-	addrs   []string
-	sarama  sarama.Client
-	decoder Decoder
+	addrs       []string
+	sarama      sarama.Client
+	decoder     Decoder
+	concurrency int
 }
 
 //Partition holds information about a kafka partition
@@ -69,9 +70,10 @@ func New(addrs []string, opts ...Opt) (*Client, error) {
 	}
 
 	cli := &Client{
-		sarama:  s,
-		addrs:   addrs,
-		decoder: &plainDecoder{},
+		sarama:      s,
+		addrs:       addrs,
+		decoder:     &plainDecoder{},
+		concurrency: 20,
 	}
 
 	for _, opt := range opts {
@@ -79,6 +81,13 @@ func New(addrs []string, opts ...Opt) (*Client, error) {
 	}
 
 	return cli, nil
+}
+
+// Concurrency is used to set the size of the search worker pool
+func Concurrency(j int) func(*Client) {
+	return func(c *Client) {
+		c.concurrency = j
+	}
 }
 
 // WithDecoder is used to insert a Decoder plugin
@@ -232,18 +241,27 @@ type searchResult struct {
 //SearchTopic allows the caller to search across all partitions in a topic.
 func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool, cb func(int64, int64)) ([]Partition, error) {
 	ch := make(chan searchResult)
+	in := make(chan Partition)
 	n := int64(len(partitions))
 	var stop bool
 	f := func() bool {
 		return stop
 	}
 
-	for _, p := range partitions {
-		go func(partition Partition, ch chan searchResult) {
-			i, err := c.search(partition, s, f, func(_, _ int64) {})
-			ch <- searchResult{partition: partition, offset: i, error: err}
-		}(p, ch)
+	for i := 0; i < c.concurrency; i++ {
+		go func(in chan Partition, out chan searchResult) {
+			for partition := range in {
+				i, err := c.search(partition, s, f, func(_, _ int64) {})
+				ch <- searchResult{partition: partition, offset: i, error: err}
+			}
+		}(in, ch)
 	}
+
+	go func() {
+		for _, p := range partitions {
+			in <- p
+		}
+	}()
 
 	var results []Partition
 
@@ -267,8 +285,9 @@ func (c *Client) SearchTopic(partitions []Partition, s string, firstResult bool,
 			stop = true
 			break
 		}
-
 	}
+
+	close(in)
 
 	sort.Slice(results, func(i, j int) bool {
 		return results[j].Partition >= results[i].Partition
