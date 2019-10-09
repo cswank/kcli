@@ -377,8 +377,14 @@ func (m *message) search(s string, cb func(int64, int64)) (int64, error) {
 }
 
 func (m *message) jump(i int64) error {
-	m.pg = int(i) / m.height
-	m.offset = int(i) % m.height
+	pg := int(i) / m.height
+	o := int(i) % m.height
+	if (pg*m.height)+o > len(m.body) {
+		return nil
+	}
+
+	m.pg = pg
+	m.offset = o
 	return nil
 }
 
