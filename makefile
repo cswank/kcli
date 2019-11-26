@@ -3,7 +3,7 @@ release:
 	mkdir tmp/windows
 	mkdir tmp/linux
 	mkdir tmp/macos
-    GOOS=darwin GOARCH=amd64 go build .
+	GOOS=darwin GOARCH=amd64 go build .
 	mv kcli tmp/macos
 	GOOS=linux GOARCH=amd64 go build .
 	mv kcli tmp/linux
