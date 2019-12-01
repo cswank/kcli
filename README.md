@@ -1,6 +1,8 @@
 # kcli
 Kcli is a kafka read only command line browser.
 
+<img src="./docs/kcli.gif"/>
+
 ## Install
 
 Binaries are provided [here](https://github.com/cswank/kcli/releases/tag/1.4.1) (windows
