@@ -8,7 +8,7 @@ import (
 // Protobuf is an example of how to create a plugin
 // to decode protobuf encoded kafka messages.
 // To compile:
-//     go build -buildmode=plugin -o protobuf.so protobuf.go
+//     go build -buildmode=plugin -o protobuf.so main.go
 // Then start kcli like:
 //     kcli -d ./protobuf.so
 type Protobuf struct{}

@@ -2,13 +2,14 @@ package main
 
 import (
 	"encoding/json"
+
 	"github.com/vmihailenco/msgpack"
 )
 
 // Msgpack is an example of how to create a plugin
 // to decode msgpack encoded kafka messages.
 // To compile:
-//     go build -buildmode=plugin -o msgpack.so msgpack.go
+//     go build -buildmode=plugin -o msgpack.so main.go
 // Then start kcli like:
 //     kcli -d ./msgpack.so
 type Msgpack struct{}
