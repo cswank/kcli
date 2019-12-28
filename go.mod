@@ -25,6 +25,7 @@ require (
 	github.com/pierrec/lz4 v1.0.2-0.20171218195038-2fcda4cb7018
 	github.com/pierrec/xxHash v0.1.1
 	github.com/rcrowley/go-metrics v0.0.0-20181016184325-3113b8401b8a
+	github.com/vmihailenco/msgpack v4.0.4+incompatible
 	golang.org/x/crypto v0.0.0-20190404164418-38d8ce5564a5
 	golang.org/x/net v0.0.0-20191007182048-72f939374954
 	golang.org/x/sys v0.0.0-20190403152447-81d4e9dc473e
